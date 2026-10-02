@@ -27,87 +27,63 @@ interface FormData {
 
 const emptyForm: FormData = { nama: "", jurusan: "", canva_url: "", deskripsi: "", is_approved: false };
 
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSCODE || "admin123";
-
-/* ── Login Component (Password Only) ── */
+/* ── Login Component ── */
 function LoginForm({ onLogin }: { onLogin: () => void }) {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setLoading(true);
     setError("");
-
-    if (password.trim() === ADMIN_PASSWORD) {
-      onLogin();
+    const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+    if (err) {
+      setError(err.message);
+      setLoading(false);
     } else {
-      setError("Password salah! Silakan coba lagi.");
+      onLogin();
     }
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm space-y-6">
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+      <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-2">
-          <div className="inline-flex p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl shadow-cyan-500/5">
+          <div className="inline-flex p-4 rounded-2xl bg-slate-800 border border-slate-700/50 mb-4">
             <ShieldCheck className="w-10 h-10 text-cyan-400" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">Admin Panel</h1>
-          <p className="text-slate-400 text-xs sm:text-sm">
-            Masukkan password untuk mengelola portofolio siswa
-          </p>
+          <h1 className="text-3xl font-bold text-white">Admin Panel</h1>
+          <p className="text-slate-400">Masuk untuk mengelola portofolio siswa</p>
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4 p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl">
+        <form onSubmit={handleSubmit} className="space-y-4 p-6 rounded-2xl bg-slate-900 border border-slate-800">
           {error && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{error}</span>
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+              <AlertCircle className="w-4 h-4 shrink-0" />{error}
             </div>
           )}
-
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300">
-              Password Admin
-            </label>
+            <label className="text-sm font-medium text-slate-300">Email</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="admin@sekolah.id" className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700/50 text-slate-200 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-300">Password</label>
             <div className="relative">
-              <input
-                type={showPw ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoFocus
-                placeholder="Masukkan password admin..."
-                className="w-full px-4 py-2.5 pr-12 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-500/40 text-sm transition-all"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPw(!showPw)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
-              >
-                {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              <input type={showPw ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} required placeholder="********" className="w-full px-4 py-2.5 pr-12 rounded-xl bg-slate-800 border border-slate-700/50 text-slate-200 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all" />
+              <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer">
+                {showPw ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
           </div>
-
-          <button
-            type="submit"
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold text-sm hover:from-cyan-400 hover:to-blue-500 transition-all cursor-pointer shadow-lg shadow-cyan-500/20"
-          >
-            <LogIn className="w-4 h-4" />
-            <span>Masuk Admin</span>
+          <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 transition-all cursor-pointer">
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
+            {loading ? "Memproses..." : "Masuk"}
           </button>
         </form>
-
         <div className="text-center">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-slate-400 hover:text-white text-xs transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Kembali ke Beranda (Page 1)</span>
-          </Link>
+          <Link to="/" className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-300 text-sm"><ArrowLeft className="w-4 h-4"/>Kembali ke Beranda</Link>
         </div>
       </div>
     </div>
@@ -177,10 +153,14 @@ export default function AdminPage() {
 
   // Check session
   useEffect(() => {
-    if (localStorage.getItem("portiva_admin_auth") === "true") {
-      setUser({ role: "admin" });
-    }
-    setChecking(false);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setChecking(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   const fetchPortfolios = useCallback(async () => {
@@ -229,22 +209,13 @@ export default function AdminPage() {
     fetchPortfolios();
   }
 
-  function handleLogout() {
-    localStorage.removeItem("portiva_admin_auth");
+  async function handleLogout() {
+    await supabase.auth.signOut();
     setUser(null);
   }
 
   if (checking) return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><Loader2 className="w-10 h-10 text-cyan-400 animate-spin" /></div>;
-  if (!user) {
-    return (
-      <LoginForm
-        onLogin={() => {
-          localStorage.setItem("portiva_admin_auth", "true");
-          setUser({ role: "admin" });
-        }}
-      />
-    );
-  }
+  if (!user) return <LoginForm onLogin={() => {}} />;
 
   const approved = portfolios.filter(p => p.is_approved).length;
 
@@ -260,7 +231,7 @@ export default function AdminPage() {
           </Link>
           <div className="flex items-center gap-3">
             <Link to="/showcase" className="px-3 py-2 text-sm text-slate-400 hover:text-white transition-colors">Showcase</Link>
-            <span className="text-cyan-400 text-xs px-2.5 py-1 rounded bg-slate-900 border border-slate-800 font-medium">Mode Admin</span>
+            <span className="text-slate-600 text-sm truncate max-w-[120px] hidden sm:inline">{user.email}</span>
             <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"><LogOut className="w-4 h-4"/>Keluar</button>
           </div>
         </div>
