@@ -26,6 +26,8 @@ import {
   ArrowLeft,
   ArrowUpRight,
   Plus,
+  Globe,
+  Info,
 } from "lucide-react";
 
 interface Portfolio {
@@ -108,6 +110,31 @@ function useAutoSlide(
   return { pause, resume };
 }
 
+function getCanvaEmbedInfo(url: string) {
+  if (!url) return { embedUrl: "", isBlockedSite: false, isEmbedUrl: false };
+  let trimmed = url.trim();
+
+  // Jika input berupa tag HTML iframe (<iframe src="..."), ekstrak link src-nya
+  const iframeMatch = trimmed.match(/src=["']([^"']+)["']/i);
+  if (iframeMatch) {
+    trimmed = iframeMatch[1];
+  }
+
+  // Domain *.my.canva.site atau *.canva.site memblokir iframe via X-Frame-Options: SAMEORIGIN
+  if (trimmed.includes(".canva.site")) {
+    return { embedUrl: trimmed, isBlockedSite: true, isEmbedUrl: false };
+  }
+
+  // Format link Canva design biasa -> ubah jadi format embed resmi (/view?embed)
+  if (trimmed.includes("canva.com/design/")) {
+    let clean = trimmed.split("?")[0].replace(/\/edit$|\/watch$/, "/view");
+    if (!clean.endsWith("/view")) clean += "/view";
+    return { embedUrl: `${clean}?embed`, isBlockedSite: false, isEmbedUrl: true };
+  }
+
+  return { embedUrl: trimmed, isBlockedSite: false, isEmbedUrl: false };
+}
+
 export default function ShowcasePage() {
   const { portfolios, loading } = usePortfolios();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -152,19 +179,9 @@ export default function ShowcasePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">
-        <div className="text-center space-y-4">
-          <Loader2 className="w-12 h-12 text-cyan-400 animate-spin mx-auto" />
-          <p className="text-slate-400 text-lg">Memuat data portofolio siswa…</p>
-          <div className="flex gap-4 mt-8">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="w-48 h-32 rounded-xl bg-slate-800/80 animate-pulse border border-slate-700/40"
-              />
-            ))}
-          </div>
-        </div>
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white space-y-4">
+        <div className="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-slate-400 font-medium animate-pulse">Memuat data portofolio siswa...</p>
       </div>
     );
   }
@@ -208,22 +225,23 @@ export default function ShowcasePage() {
   }
 
   const active = portfolios[activeIndex] || portfolios[0];
+  const activeEmbed = getCanvaEmbedInfo(active?.canva_url || "");
 
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-cyan-500/30">
       {/* ── Navbar ── */}
       <nav className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-2 font-bold text-lg">
-            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/20">
+          <Link to="/" className="flex items-center gap-2 font-bold text-lg group">
+            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
               <GraduationCap className="w-5 h-5" />
             </div>
             <div>
               <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent tracking-wide font-extrabold">
                 PORTIVA
               </span>
-              <span className="text-xs text-slate-500 block -mt-1 font-normal">
-                Galeri Siswa
+              <span className="text-[10px] text-slate-500 block -mt-1 font-medium uppercase tracking-widest">
+                Galeri Karya
               </span>
             </div>
           </Link>
@@ -236,7 +254,7 @@ export default function ShowcasePage() {
             </Link>
             <Link
               to="/showcase"
-              className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-cyan-400 bg-cyan-500/10 border border-cyan-500/20"
+              className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.15)]"
             >
               Galeri Portofolio
             </Link>
@@ -255,38 +273,31 @@ export default function ShowcasePage() {
         <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-slate-950 to-slate-950" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8 sm:pt-16 sm:pb-10">
           <div className="text-center space-y-4 max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs sm:text-sm font-medium">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs sm:text-sm font-medium animate-fade-in-up">
               <Sparkles className="w-4 h-4 animate-pulse" />
-              Page 2 — Showcase Portofolio Canva Site
+              Showcase Portofolio Interaktif
             </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight animate-fade-in-up animation-delay-100">
               <span>Galeri Karya Digital </span>
               <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
                 Siswa Siap Kerja
               </span>
             </h1>
-            <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
-              Jelajahi portofolio interaktif siswa SMK yang siap terjun ke industri.
-              Slide berganti otomatis tiap 10 detik dan otomatis menjeda saat mouse melayang (hover).
+            <p className="text-slate-400 text-sm sm:text-base leading-relaxed animate-fade-in-up animation-delay-200">
+              Jelajahi portofolio digital siswa SMK unggulan kami.
+              Presentasi ini berputar otomatis setiap 10 detik, dan akan menjeda saat mouse melayang (hover).
             </p>
 
             {/* Badges */}
-            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-300 text-xs sm:text-sm">
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2 animate-fade-in-up animation-delay-300">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-300 text-xs sm:text-sm shadow-sm">
                 <Monitor className="w-4 h-4 text-blue-400" />
-                <span>Platform: <strong>Canva Site</strong></span>
+                <span>Platform: <strong>Canva / Web</strong></span>
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-300 text-xs sm:text-sm">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-300 text-xs sm:text-sm shadow-sm">
                 <Users className="w-4 h-4 text-cyan-400" />
-                <span>Total: <strong>{portfolios.length} Karya Terverifikasi</strong></span>
+                <span>Total: <strong>{portfolios.length} Karya</strong></span>
               </div>
-              <Link
-                to="/admin"
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-xs sm:text-sm transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Tambah Karya (Admin)</span>
-              </Link>
             </div>
           </div>
         </div>
@@ -295,7 +306,7 @@ export default function ShowcasePage() {
       {/* ── Section 2: Main Viewer (Mockup Browser & Auto-Slide) ── */}
       <section ref={viewerRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div
-          className="rounded-2xl overflow-hidden border border-slate-700/60 bg-slate-900 shadow-2xl shadow-cyan-950/20 transition-all"
+          className="rounded-2xl overflow-hidden border border-slate-700/60 bg-slate-900 shadow-[0_20px_50px_-12px_rgba(8,145,178,0.25)] transition-all animate-fade-in-up animation-delay-400"
           onMouseEnter={pause}
           onMouseLeave={resume}
         >
@@ -303,9 +314,9 @@ export default function ShowcasePage() {
           <div className="flex items-center justify-between px-4 py-3 bg-slate-800 border-b border-slate-700/60">
             {/* macOS dots */}
             <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-red-500/80" />
-              <span className="w-3 h-3 rounded-full bg-yellow-500/80" />
-              <span className="w-3 h-3 rounded-full bg-green-500/80" />
+              <span className="w-3 h-3 rounded-full bg-red-500/80 shadow-[0_0_5px_rgba(239,68,68,0.5)]" />
+              <span className="w-3 h-3 rounded-full bg-yellow-500/80 shadow-[0_0_5px_rgba(234,179,8,0.5)]" />
+              <span className="w-3 h-3 rounded-full bg-green-500/80 shadow-[0_0_5px_rgba(34,197,94,0.5)]" />
             </div>
 
             {/* Address Bar */}
@@ -331,14 +342,57 @@ export default function ShowcasePage() {
 
           {/* Iframe 16:9 Showcase Frame */}
           <div className="relative w-full bg-slate-950" style={{ paddingBottom: "56.25%" }}>
-            <iframe
-              key={active.id}
-              src={active.canva_url}
-              title={`Portofolio ${active.nama}`}
-              className="absolute inset-0 w-full h-full border-0"
-              loading="lazy"
-              allow="fullscreen"
-            />
+            {activeEmbed.isBlockedSite ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 sm:p-12 text-center bg-gradient-to-br from-slate-900 via-slate-950 to-cyan-950/40">
+                <div className="relative z-10 max-w-lg space-y-4">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs font-semibold shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+                    <Globe className="w-4 h-4 text-cyan-400 animate-pulse" />
+                    <span>Canva Website Live ({active.jurusan})</span>
+                  </div>
+
+                  <h3 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
+                    {active.nama}
+                  </h3>
+
+                  <p className="text-slate-400 text-xs sm:text-sm leading-relaxed max-w-md mx-auto">
+                    {active.deskripsi || "Portofolio website interaktif karya siswa SMK siap kerja."}
+                  </p>
+
+                  <div className="p-4 rounded-xl bg-slate-800/80 border border-slate-700/60 text-slate-300 text-xs flex items-start gap-3 text-left max-w-md mx-auto shadow-inner">
+                    <Info className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-slate-200">Domain Canva Site Terproteksi Keamanan</p>
+                      <p className="text-slate-400 text-[11px] mt-1 leading-relaxed">
+                        Canva membatasi penayangan website ini secara langsung di dalam iframe demi keamanan browser Anda (X-Frame-Options). Silakan klik tombol di bawah untuk menjelajahinya di tab baru secara aman dan interaktif!
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
+                    <a
+                      href={active.canva_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-sm shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all transform hover:-translate-y-1 cursor-pointer"
+                    >
+                      <span>Buka Portofolio di Tab Baru</span>
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-radial from-cyan-500/5 to-transparent pointer-events-none" />
+              </div>
+            ) : (
+              <iframe
+                key={active.id}
+                src={activeEmbed.embedUrl}
+                title={`Portofolio ${active.nama}`}
+                className="absolute inset-0 w-full h-full border-0"
+                loading="lazy"
+                allow="fullscreen"
+                allowFullScreen
+              />
+            )}
           </div>
 
           {/* Bottom Bar: Info & Controls */}
@@ -362,7 +416,7 @@ export default function ShowcasePage() {
                 </p>
               </div>
               {isPlaying && (
-                <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 text-xs font-medium ml-2">
+                <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 text-xs font-medium ml-2 shadow-[0_0_10px_rgba(6,182,212,0.1)]">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400" />
@@ -381,7 +435,6 @@ export default function ShowcasePage() {
                 onClick={goPrev}
                 className="p-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors cursor-pointer"
                 title="Portofolio Sebelumnya"
-                aria-label="Sebelumnya"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
@@ -389,11 +442,10 @@ export default function ShowcasePage() {
                 onClick={() => setIsPlaying((p) => !p)}
                 className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl font-medium text-xs transition-colors cursor-pointer ${
                   isPlaying
-                    ? "bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-600/30"
+                    ? "bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_15px_rgba(6,182,212,0.3)]"
                     : "bg-slate-700 hover:bg-slate-600 text-slate-300"
                 }`}
                 title={isPlaying ? "Jeda rotasi otomatis" : "Mulai rotasi otomatis"}
-                aria-label={isPlaying ? "Pause" : "Play"}
               >
                 {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                 <span>{isPlaying ? "Pause" : "Play"}</span>
@@ -402,7 +454,6 @@ export default function ShowcasePage() {
                 onClick={goNext}
                 className="p-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors cursor-pointer"
                 title="Portofolio Berikutnya"
-                aria-label="Berikutnya"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -436,7 +487,7 @@ export default function ShowcasePage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Cari berdasarkan nama siswa…"
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/50 text-sm transition-all"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/50 text-sm transition-all shadow-sm"
             />
           </div>
 
@@ -475,6 +526,7 @@ export default function ShowcasePage() {
             {filtered.map((p) => {
               const originalIdx = portfolios.findIndex((o) => o.id === p.id);
               const isActive = originalIdx === activeIndex;
+              const itemEmbed = getCanvaEmbedInfo(p.canva_url);
 
               return (
                 <div
@@ -482,23 +534,37 @@ export default function ShowcasePage() {
                   onClick={() => selectPortfolio(originalIdx)}
                   className={`group text-left rounded-2xl overflow-hidden border transition-all duration-300 cursor-pointer flex flex-col justify-between ${
                     isActive
-                      ? "border-cyan-500 bg-slate-900 shadow-xl shadow-cyan-500/10 ring-2 ring-cyan-500/30 -translate-y-1"
-                      : "border-slate-800 bg-slate-900/60 hover:border-slate-700 hover:bg-slate-900 hover:-translate-y-1"
+                      ? "border-cyan-500 bg-slate-900 shadow-xl shadow-cyan-500/20 ring-2 ring-cyan-500/30 -translate-y-1"
+                      : "border-slate-800 bg-slate-900/60 hover:border-slate-700 hover:bg-slate-900 hover:-translate-y-1 hover:shadow-lg"
                   }`}
                 >
                   <div>
-                    {/* Thumbnail Iframe */}
+                    {/* Thumbnail Iframe or Aesthetic Badge */}
                     <div className="relative w-full aspect-video bg-slate-950 overflow-hidden border-b border-slate-800">
-                      <iframe
-                        src={p.canva_url}
-                        title={`Preview ${p.nama}`}
-                        className="absolute inset-0 w-full h-full border-0 pointer-events-none"
-                        loading="lazy"
-                        tabIndex={-1}
-                      />
+                      {!itemEmbed.isBlockedSite && itemEmbed.isEmbedUrl ? (
+                        <iframe
+                          src={itemEmbed.embedUrl}
+                          title={`Preview ${p.nama}`}
+                          className="absolute inset-0 w-full h-full border-0 pointer-events-none"
+                          loading="lazy"
+                          tabIndex={-1}
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 flex flex-col items-center justify-center p-4 text-center">
+                          <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 font-bold text-lg mb-1.5 shadow-md group-hover:scale-110 transition-transform">
+                            {p.nama?.charAt(0)?.toUpperCase() ?? "?"}
+                          </div>
+                          <span className="text-xs font-bold text-slate-200 truncate max-w-[90%]">
+                            {p.nama}
+                          </span>
+                          <span className="text-[10px] text-cyan-400 font-semibold mt-1 flex items-center gap-1 px-2 py-0.5 rounded-md bg-cyan-950/50 border border-cyan-500/20">
+                            <Globe className="w-3 h-3" /> Canva Site • {p.jurusan}
+                          </span>
+                        </div>
+                      )}
                       <div className="absolute inset-0 bg-transparent" />
                       {isActive && (
-                        <div className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-md bg-cyan-600 text-white text-[11px] font-bold shadow-md">
+                        <div className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-md bg-cyan-600 text-white text-[11px] font-bold shadow-[0_0_10px_rgba(6,182,212,0.3)]">
                           Sedang Ditampilkan
                         </div>
                       )}
@@ -523,7 +589,7 @@ export default function ShowcasePage() {
                   {/* Card Footer */}
                   <div className="px-4 pb-4 pt-1 flex items-center justify-between text-xs text-slate-500 border-t border-slate-800/40">
                     <span className="group-hover:text-cyan-400 transition-colors font-medium flex items-center gap-1">
-                      Lihat Karya
+                      Lihat Karya di Layar
                       <ArrowUpRight className="w-3.5 h-3.5" />
                     </span>
                     <a
@@ -531,7 +597,7 @@ export default function ShowcasePage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="hover:text-slate-300 p-1 rounded"
+                      className="hover:text-cyan-400 p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors"
                       title="Buka link langsung"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -549,12 +615,12 @@ export default function ShowcasePage() {
         <div className="max-w-7xl mx-auto px-4 space-y-3">
           <div className="flex items-center justify-center gap-2 text-slate-400 font-semibold">
             <GraduationCap className="w-5 h-5 text-cyan-400" />
-            <span>PORTIVA — Showcase Portofolio Canva Site Siswa SMK Siap Kerja</span>
+            <span>PORTIVA — Showcase Portofolio Siswa SMK Siap Kerja</span>
           </div>
           <div className="flex justify-center gap-4 text-xs text-slate-500">
-            <Link to="/" className="hover:text-slate-300">Info &amp; Kelengkapan Kegiatan (Page 1)</Link>
+            <Link to="/" className="hover:text-slate-300">Info &amp; Kelengkapan Kegiatan</Link>
             <span>•</span>
-            <Link to="/showcase" className="hover:text-slate-300">Galeri Portofolio (Page 2)</Link>
+            <Link to="/showcase" className="hover:text-slate-300">Galeri Portofolio</Link>
             <span>•</span>
             <Link to="/admin" className="hover:text-slate-300">Admin Panel</Link>
           </div>
