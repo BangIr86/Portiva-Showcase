@@ -26,25 +26,21 @@ interface FormData {
 }
 
 const emptyForm: FormData = { nama: "", jurusan: "", canva_url: "", deskripsi: "", is_approved: false };
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSCODE || "admin123";
 
 /* ── Login Component ── */
 function LoginForm({ onLogin }: { onLogin: () => void }) {
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError("");
-    const { error: err } = await supabase.auth.signInWithPassword({ email, password });
-    if (err) {
-      setError(err.message);
-      setLoading(false);
-    } else {
+    if (password.trim() === ADMIN_PASSWORD) {
       onLogin();
+    } else {
+      setError("Password salah! Silakan coba lagi.");
     }
   }
 
@@ -65,21 +61,16 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
             </div>
           )}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-300">Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="admin@sekolah.id" className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700/50 text-slate-200 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all" />
-          </div>
-          <div className="space-y-1.5">
             <label className="text-sm font-medium text-slate-300">Password</label>
             <div className="relative">
-              <input type={showPw ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} required placeholder="********" className="w-full px-4 py-2.5 pr-12 rounded-xl bg-slate-800 border border-slate-700/50 text-slate-200 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all" />
+              <input type={showPw ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} required placeholder="Masukkan password admin..." className="w-full px-4 py-2.5 pr-12 rounded-xl bg-slate-800 border border-slate-700/50 text-slate-200 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all" autoFocus />
               <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer">
                 {showPw ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
           </div>
-          <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 transition-all cursor-pointer">
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
-            {loading ? "Memproses..." : "Masuk"}
+          <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold hover:from-cyan-400 hover:to-blue-500 transition-all cursor-pointer">
+            <LogIn className="w-5 h-5" /> Masuk
           </button>
         </form>
         <div className="text-center">
@@ -141,7 +132,7 @@ function PortfolioModal({
 
 /* ── Main Admin Page ── */
 export default function AdminPage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ role: string } | null>(null);
   const [checking, setChecking] = useState(true);
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [loading, setLoading] = useState(false);
@@ -153,14 +144,10 @@ export default function AdminPage() {
 
   // Check session
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setChecking(false);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null);
-    });
-    return () => subscription.unsubscribe();
+    if (localStorage.getItem("portiva_admin_auth") === "true") {
+      setUser({ role: "admin" });
+    }
+    setChecking(false);
   }, []);
 
   const fetchPortfolios = useCallback(async () => {
@@ -209,13 +196,13 @@ export default function AdminPage() {
     fetchPortfolios();
   }
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
+  function handleLogout() {
+    localStorage.removeItem("portiva_admin_auth");
     setUser(null);
   }
 
   if (checking) return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><Loader2 className="w-10 h-10 text-cyan-400 animate-spin" /></div>;
-  if (!user) return <LoginForm onLogin={() => {}} />;
+  if (!user) return <LoginForm onLogin={() => { localStorage.setItem("portiva_admin_auth", "true"); setUser({ role: "admin" }); }} />;
 
   const approved = portfolios.filter(p => p.is_approved).length;
 
@@ -231,7 +218,7 @@ export default function AdminPage() {
           </Link>
           <div className="flex items-center gap-3">
             <Link to="/showcase" className="px-3 py-2 text-sm text-slate-400 hover:text-white transition-colors">Showcase</Link>
-            <span className="text-slate-600 text-sm truncate max-w-[120px] hidden sm:inline">{user.email}</span>
+            <span className="text-cyan-400 text-xs px-2.5 py-1 rounded bg-slate-900 border border-slate-800 font-medium">Mode Admin</span>
             <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"><LogOut className="w-4 h-4"/>Keluar</button>
           </div>
         </div>
@@ -319,8 +306,6 @@ export default function AdminPage() {
           </div>
         )}
       </div>
-
-      {/* Modal */}
       {showModal && <PortfolioModal form={form} setForm={setForm} onSave={handleSave} onClose={() => setShowModal(false)} saving={saving} isEdit={!!editId} />}
     </div>
   );
