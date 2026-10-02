@@ -1,4 +1,4 @@
-﻿import {
+import {
   useState,
   useEffect,
   useRef,
@@ -26,6 +26,8 @@ import {
   ArrowLeft,
   ArrowUpRight,
   Plus,
+  Globe,
+  Info,
 } from "lucide-react";
 
 interface Portfolio {
@@ -106,6 +108,31 @@ function useAutoSlide(
   }, []);
 
   return { pause, resume };
+}
+
+function getCanvaEmbedInfo(url: string) {
+  if (!url) return { embedUrl: "", isBlockedSite: false, isEmbedUrl: false };
+  let trimmed = url.trim();
+
+  // Jika input berupa tag HTML iframe (<iframe src="..."), ekstrak link src-nya
+  const iframeMatch = trimmed.match(/src=["']([^"']+)["']/i);
+  if (iframeMatch) {
+    trimmed = iframeMatch[1];
+  }
+
+  // Domain *.my.canva.site atau *.canva.site memblokir iframe via X-Frame-Options: SAMEORIGIN
+  if (trimmed.includes(".canva.site")) {
+    return { embedUrl: trimmed, isBlockedSite: true, isEmbedUrl: false };
+  }
+
+  // Format link Canva design biasa -> ubah jadi format embed resmi (/view?embed)
+  if (trimmed.includes("canva.com/design/")) {
+    let clean = trimmed.split("?")[0].replace(/\/edit$|\/watch$/, "/view");
+    if (!clean.endsWith("/view")) clean += "/view";
+    return { embedUrl: `${clean}?embed`, isBlockedSite: false, isEmbedUrl: true };
+  }
+
+  return { embedUrl: trimmed, isBlockedSite: false, isEmbedUrl: false };
 }
 
 export default function ShowcasePage() {
@@ -208,6 +235,7 @@ export default function ShowcasePage() {
   }
 
   const active = portfolios[activeIndex] || portfolios[0];
+  const activeEmbed = getCanvaEmbedInfo(active?.canva_url || "");
 
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-cyan-500/30">
@@ -331,14 +359,59 @@ export default function ShowcasePage() {
 
           {/* Iframe 16:9 Showcase Frame */}
           <div className="relative w-full bg-slate-950" style={{ paddingBottom: "56.25%" }}>
-            <iframe
-              key={active.id}
-              src={active.canva_url}
-              title={`Portofolio ${active.nama}`}
-              className="absolute inset-0 w-full h-full border-0"
-              loading="lazy"
-              allow="fullscreen"
-            />
+            {activeEmbed.isBlockedSite ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 sm:p-12 text-center bg-gradient-to-br from-slate-900 via-slate-950 to-cyan-950/40">
+                <div className="relative z-10 max-w-lg space-y-4">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs font-semibold">
+                    <Globe className="w-4 h-4 text-cyan-400" />
+                    <span>Canva Website Live ({active.jurusan})</span>
+                  </div>
+
+                  <h3 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
+                    {active.nama}
+                  </h3>
+
+                  <p className="text-slate-400 text-xs sm:text-sm leading-relaxed max-w-md mx-auto">
+                    {active.deskripsi || "Portofolio website interaktif karya siswa SMK siap kerja."}
+                  </p>
+
+                  <div className="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-slate-300 text-xs flex items-start gap-2.5 text-left max-w-md mx-auto">
+                    <Info className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-slate-200">Domain Canva Site Terproteksi</p>
+                      <p className="text-slate-400 text-[11px] mt-0.5 leading-relaxed">
+                        Canva membatasi penayangan langsung di dalam frame demi keamanan browser. Silakan klik tombol di bawah untuk membuka dan berinteraksi langsung dengan website portofolio siswa ini di tab baru.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+                    <a
+                      href={active.canva_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold text-sm shadow-xl shadow-cyan-500/25 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+                    >
+                      <span>Buka Portofolio di Tab Baru</span>
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
+                </div>
+
+                {/* Subtle radial glow */}
+                <div className="absolute inset-0 bg-radial from-cyan-500/5 to-transparent pointer-events-none" />
+              </div>
+            ) : (
+              <iframe
+                key={active.id}
+                src={activeEmbed.embedUrl}
+                title={`Portofolio ${active.nama}`}
+                className="absolute inset-0 w-full h-full border-0"
+                loading="lazy"
+                allow="fullscreen"
+                allowFullScreen
+              />
+            )}
           </div>
 
           {/* Bottom Bar: Info & Controls */}
@@ -475,6 +548,7 @@ export default function ShowcasePage() {
             {filtered.map((p) => {
               const originalIdx = portfolios.findIndex((o) => o.id === p.id);
               const isActive = originalIdx === activeIndex;
+              const itemEmbed = getCanvaEmbedInfo(p.canva_url);
 
               return (
                 <div
@@ -487,15 +561,29 @@ export default function ShowcasePage() {
                   }`}
                 >
                   <div>
-                    {/* Thumbnail Iframe */}
+                    {/* Thumbnail Iframe or Aesthetic Badge */}
                     <div className="relative w-full aspect-video bg-slate-950 overflow-hidden border-b border-slate-800">
-                      <iframe
-                        src={p.canva_url}
-                        title={`Preview ${p.nama}`}
-                        className="absolute inset-0 w-full h-full border-0 pointer-events-none"
-                        loading="lazy"
-                        tabIndex={-1}
-                      />
+                      {!itemEmbed.isBlockedSite && itemEmbed.isEmbedUrl ? (
+                        <iframe
+                          src={itemEmbed.embedUrl}
+                          title={`Preview ${p.nama}`}
+                          className="absolute inset-0 w-full h-full border-0 pointer-events-none"
+                          loading="lazy"
+                          tabIndex={-1}
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 flex flex-col items-center justify-center p-4 text-center">
+                          <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 font-bold text-lg mb-1.5 shadow-md">
+                            {p.nama?.charAt(0)?.toUpperCase() ?? "?"}
+                          </div>
+                          <span className="text-xs font-semibold text-slate-200 truncate max-w-[90%]">
+                            {p.nama}
+                          </span>
+                          <span className="text-[10px] text-cyan-400 font-medium mt-0.5 flex items-center gap-1">
+                            <Globe className="w-3 h-3" /> Canva Site • {p.jurusan}
+                          </span>
+                        </div>
+                      )}
                       <div className="absolute inset-0 bg-transparent" />
                       {isActive && (
                         <div className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-md bg-cyan-600 text-white text-[11px] font-bold shadow-md">
