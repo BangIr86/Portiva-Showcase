@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import {
-  GraduationCap, LogIn, LogOut, Plus, Pencil, Trash2, Check, X, Loader2, Eye, EyeOff, Save, ArrowLeft, ShieldCheck, Users, AlertCircle, HelpCircle, Settings
+  GraduationCap, LogIn, LogOut, Plus, Pencil, Trash2,
+  Check, X, Loader2, Eye, EyeOff, Save, ArrowLeft,
+  ShieldCheck, Users, AlertCircle,
 } from "lucide-react";
 
 interface Portfolio {
@@ -12,14 +14,7 @@ interface Portfolio {
   canva_url: string;
   deskripsi: string;
   is_approved: boolean;
-  created_at?: string;
-}
-
-interface SettingsData {
-  event_name: string;
-  event_description: string;
-  event_date: string;
-  event_location: string;
+  created_at: string;
 }
 
 interface FormData {
@@ -32,87 +27,63 @@ interface FormData {
 
 const emptyForm: FormData = { nama: "", jurusan: "", canva_url: "", deskripsi: "", is_approved: false };
 
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSCODE || "admin123";
-
 /* ── Login Component ── */
 function LoginForm({ onLogin }: { onLogin: () => void }) {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setLoading(true);
     setError("");
-
-    if (password.trim() === ADMIN_PASSWORD) {
-      onLogin();
+    const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+    if (err) {
+      setError(err.message);
+      setLoading(false);
     } else {
-      setError("Password salah! Silakan coba lagi.");
+      onLogin();
     }
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm space-y-6">
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+      <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-2">
-          <div className="inline-flex p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl shadow-cyan-500/5">
+          <div className="inline-flex p-4 rounded-2xl bg-slate-800 border border-slate-700/50 mb-4">
             <ShieldCheck className="w-10 h-10 text-cyan-400" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">Admin Panel</h1>
-          <p className="text-slate-400 text-xs sm:text-sm">
-            Masukkan password untuk mengelola website
-          </p>
+          <h1 className="text-3xl font-bold text-white">Admin Panel</h1>
+          <p className="text-slate-400">Masuk untuk mengelola portofolio siswa</p>
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4 p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl">
+        <form onSubmit={handleSubmit} className="space-y-4 p-6 rounded-2xl bg-slate-900 border border-slate-800">
           {error && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{error}</span>
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+              <AlertCircle className="w-4 h-4 shrink-0" />{error}
             </div>
           )}
-
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300">
-              Password Admin
-            </label>
+            <label className="text-sm font-medium text-slate-300">Email</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="admin@sekolah.id" className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700/50 text-slate-200 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-300">Password</label>
             <div className="relative">
-              <input
-                type={showPw ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoFocus
-                placeholder="Masukkan password..."
-                className="w-full px-4 py-2.5 pr-12 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-500/40 text-sm transition-all"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPw(!showPw)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
-              >
-                {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              <input type={showPw ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} required placeholder="********" className="w-full px-4 py-2.5 pr-12 rounded-xl bg-slate-800 border border-slate-700/50 text-slate-200 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all" />
+              <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer">
+                {showPw ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
           </div>
-
-          <button
-            type="submit"
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold text-sm hover:from-cyan-400 hover:to-blue-500 transition-all cursor-pointer shadow-lg shadow-cyan-500/20"
-          >
-            <LogIn className="w-4 h-4" />
-            <span>Masuk Admin</span>
+          <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 transition-all cursor-pointer">
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
+            {loading ? "Memproses..." : "Masuk"}
           </button>
         </form>
-
         <div className="text-center">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-slate-400 hover:text-white text-xs transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Kembali ke Beranda</span>
-          </Link>
+          <Link to="/" className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-300 text-sm"><ArrowLeft className="w-4 h-4"/>Kembali ke Beranda</Link>
         </div>
       </div>
     </div>
@@ -128,99 +99,39 @@ function PortfolioModal({
   saving: boolean; isEdit: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4 overflow-y-auto py-8">
-      <div className="w-full max-w-lg rounded-2xl bg-slate-900 border border-slate-700/60 p-6 space-y-4 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+      <div className="w-full max-w-lg rounded-2xl bg-slate-900 border border-slate-700/50 p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-white">
-            {isEdit ? "Edit Portofolio" : "Tambah Portofolio Siswa"}
-          </h3>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <h3 className="text-lg font-bold text-white">{isEdit ? "Edit Portofolio" : "Tambah Portofolio Baru"}</h3>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 cursor-pointer"><X className="w-5 h-5" /></button>
         </div>
-
-        <div className="space-y-3.5">
+        <div className="space-y-3">
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-300">Nama Siswa *</label>
-            <input
-              value={form.nama}
-              onChange={(e) => setForm({ ...form, nama: e.target.value })}
-              placeholder="Contoh: Muhammad Rizki"
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-500/40 text-sm transition-all"
-            />
+            <label className="text-sm font-medium text-slate-300">Nama Siswa *</label>
+            <input value={form.nama} onChange={e => setForm({ ...form, nama: e.target.value })} placeholder="Nama lengkap siswa" className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700/50 text-slate-200 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all" />
           </div>
-
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-300">Jurusan *</label>
-            <input
-              value={form.jurusan}
-              onChange={(e) => setForm({ ...form, jurusan: e.target.value })}
-              placeholder="Contoh: RPL / DKV"
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-500/40 text-sm transition-all"
-            />
+            <label className="text-sm font-medium text-slate-300">Jurusan *</label>
+            <input value={form.jurusan} onChange={e => setForm({ ...form, jurusan: e.target.value })} placeholder="Contoh: RPL, DKV, TKJ" className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700/50 text-slate-200 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all" />
           </div>
-
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-300">
-              URL Canva Site / Embed Link *
-            </label>
-            <input
-              value={form.canva_url}
-              onChange={(e) => setForm({ ...form, canva_url: e.target.value })}
-              placeholder="https://namasiswa.my.canva.site atau link embed"
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-500/40 text-sm transition-all"
-            />
-            <div className="p-2.5 rounded-lg bg-slate-800/80 border border-slate-700/50 text-[11px] text-slate-400 space-y-1">
-              <p className="flex items-center gap-1.5 text-cyan-400 font-medium">
-                <HelpCircle className="w-3.5 h-3.5 shrink-0" />
-                Tips Link Canva:
-              </p>
-              <p>• <strong>Canva Site</strong> (<code className="text-slate-300">*.my.canva.site</code>): Ditampilkan dalam card interaktif.</p>
-              <p>• <strong>Live Embed</strong> (<code className="text-slate-300">/view?embed</code>): Tampil langsung di frame. Tag <code className="text-slate-300">&lt;iframe&gt;</code> akan diekstrak otomatis.</p>
-            </div>
+            <label className="text-sm font-medium text-slate-300">URL Canva Site *</label>
+            <input value={form.canva_url} onChange={e => setForm({ ...form, canva_url: e.target.value })} placeholder="https://nama.my.canva.site/" className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700/50 text-slate-200 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all" />
           </div>
-
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-300">Deskripsi Singkat</label>
-            <textarea
-              value={form.deskripsi}
-              onChange={(e) => setForm({ ...form, deskripsi: e.target.value })}
-              rows={3}
-              placeholder="Deskripsi singkat karya, keahlian, atau proyek..."
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-500/40 text-sm transition-all resize-none"
-            />
+            <label className="text-sm font-medium text-slate-300">Deskripsi</label>
+            <textarea value={form.deskripsi} onChange={e => setForm({ ...form, deskripsi: e.target.value })} rows={3} placeholder="Deskripsi singkat portofolio..." className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700/50 text-slate-200 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all resize-none" />
           </div>
-
-          <label className="flex items-center gap-3 cursor-pointer pt-1">
-            <input
-              type="checkbox"
-              checked={form.is_approved}
-              onChange={(e) => setForm({ ...form, is_approved: e.target.checked })}
-              className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500/40 cursor-pointer"
-            />
-            <span className="text-sm text-slate-300">
-              Setujui &amp; langsung tampilkan di showcase
-            </span>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" checked={form.is_approved} onChange={e => setForm({ ...form, is_approved: e.target.checked })} className="w-5 h-5 rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500/40 cursor-pointer" />
+            <span className="text-sm text-slate-300">Setujui &amp; tampilkan di showcase</span>
           </label>
         </div>
-
-        <div className="flex gap-3 pt-3">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 text-sm transition-colors cursor-pointer"
-          >
-            Batal
-          </button>
-          <button
-            onClick={onSave}
-            disabled={saving || !form.nama || !form.jurusan || !form.canva_url}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold text-sm hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 transition-all cursor-pointer shadow-lg shadow-cyan-500/20"
-          >
+        <div className="flex gap-3 pt-2">
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer">Batal</button>
+          <button onClick={onSave} disabled={saving || !form.nama || !form.jurusan || !form.canva_url} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 transition-all cursor-pointer">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            <span>{isEdit ? "Simpan" : "Tambah Karya"}</span>
+            {isEdit ? "Simpan Perubahan" : "Tambah"}
           </button>
         </div>
       </div>
@@ -230,13 +141,8 @@ function PortfolioModal({
 
 /* ── Main Admin Page ── */
 export default function AdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const [checking, setChecking] = useState(true);
-  
-  // Tabs
-  const [activeTab, setActiveTab] = useState<"portofolio" | "settings">("portofolio");
-
-  // Portfolio State
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -245,91 +151,49 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState({ text: "", type: "" });
 
-  // Settings State
-  const [settings, setSettings] = useState<SettingsData>({
-    event_name: "", event_description: "", event_date: "", event_location: ""
-  });
-  const [savingSettings, setSavingSettings] = useState(false);
-
+  // Check session
   useEffect(() => {
-    if (localStorage.getItem("portiva_admin_auth") === "true") {
-      setIsAuthenticated(true);
-    }
-    setChecking(false);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setChecking(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
-  const fetchData = useCallback(async () => {
+  const fetchPortfolios = useCallback(async () => {
     setLoading(true);
-    
-    // Fetch Portfolios
-    const { data: portData } = await supabase.from("portfolios").select("*").order("id", { ascending: true });
-    if (portData) setPortfolios(portData as Portfolio[]);
-    
-    // Fetch Settings
-    const { data: settsData } = await supabase.from("app_settings").select("*").eq("id", 1).single();
-    if (settsData) setSettings(settsData as SettingsData);
-
+    const { data, error } = await supabase.from("portfolios").select("*").order("id", { ascending: true });
+    if (!error) setPortfolios((data as Portfolio[]) ?? []);
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchData();
-    }
-  }, [isAuthenticated, fetchData]);
+  useEffect(() => { if (user) fetchPortfolios(); }, [user, fetchPortfolios]);
 
   function flash(text: string, type = "success") {
     setMsg({ text, type });
     setTimeout(() => setMsg({ text: "", type: "" }), 3000);
   }
 
-  // PORTFOLIO ACTIONS
-  function openAdd() {
-    setForm(emptyForm);
-    setEditId(null);
-    setShowModal(true);
-  }
-
-  function openEdit(p: Portfolio) {
-    setForm({
-      nama: p.nama,
-      jurusan: p.jurusan,
-      canva_url: p.canva_url,
-      deskripsi: p.deskripsi,
-      is_approved: p.is_approved,
-    });
-    setEditId(p.id);
-    setShowModal(true);
-  }
+  function openAdd() { setForm(emptyForm); setEditId(null); setShowModal(true); }
+  function openEdit(p: Portfolio) { setForm({ nama: p.nama, jurusan: p.jurusan, canva_url: p.canva_url, deskripsi: p.deskripsi, is_approved: p.is_approved }); setEditId(p.id); setShowModal(true); }
 
   async function handleSave() {
     setSaving(true);
-    let cleanUrl = form.canva_url.trim();
-
-    // Auto extract src if user pasted an iframe HTML tag
-    const iframeMatch = cleanUrl.match(/src=["']([^"']+)["']/i);
-    if (iframeMatch) cleanUrl = iframeMatch[1];
-
-    const payload = {
-      nama: form.nama.trim(),
-      jurusan: form.jurusan.trim(),
-      canva_url: cleanUrl,
-      deskripsi: form.deskripsi.trim(),
-      is_approved: form.is_approved,
-    };
-
     if (editId) {
-      const { error } = await supabase.from("portfolios").update(payload).eq("id", editId);
+      const { error } = await supabase.from("portfolios").update(form).eq("id", editId);
       if (error) flash("Gagal menyimpan: " + error.message, "error");
       else flash("Portofolio berhasil diperbarui!");
     } else {
-      const { error } = await supabase.from("portfolios").insert([payload]);
+      const { error } = await supabase.from("portfolios").insert([form]);
       if (error) flash("Gagal menambah: " + error.message, "error");
       else flash("Portofolio berhasil ditambahkan!");
     }
     setSaving(false);
     setShowModal(false);
-    fetchData();
+    fetchPortfolios();
   }
 
   async function handleDelete(id: number, nama: string) {
@@ -337,344 +201,127 @@ export default function AdminPage() {
     const { error } = await supabase.from("portfolios").delete().eq("id", id);
     if (error) flash("Gagal menghapus: " + error.message, "error");
     else flash("Portofolio dihapus.");
-    fetchData();
+    fetchPortfolios();
   }
 
   async function toggleApproval(id: number, current: boolean) {
     await supabase.from("portfolios").update({ is_approved: !current }).eq("id", id);
-    fetchData();
+    fetchPortfolios();
   }
 
-  // SETTINGS ACTIONS
-  async function handleSaveSettings() {
-    setSavingSettings(true);
-    const { error } = await supabase.from("app_settings").upsert({ id: 1, ...settings });
-    if (error) flash("Gagal menyimpan konten: " + error.message, "error");
-    else flash("Konten halaman berhasil diperbarui!");
-    setSavingSettings(false);
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    setUser(null);
   }
 
-  function handleLogout() {
-    localStorage.removeItem("portiva_admin_auth");
-    setIsAuthenticated(false);
-  }
+  if (checking) return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><Loader2 className="w-10 h-10 text-cyan-400 animate-spin" /></div>;
+  if (!user) return <LoginForm onLogin={() => {}} />;
 
-  if (checking) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-cyan-400 animate-spin" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <LoginForm
-        onLogin={() => {
-          localStorage.setItem("portiva_admin_auth", "true");
-          setIsAuthenticated(true);
-        }}
-      />
-    );
-  }
-
-  const approved = portfolios.filter((p) => p.is_approved).length;
+  const approved = portfolios.filter(p => p.is_approved).length;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white selection:bg-cyan-500/30">
+    <div className="min-h-screen bg-slate-950 text-white">
       {/* Navbar */}
       <nav className="sticky top-0 z-40 border-b border-slate-800/60 bg-slate-950/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2 font-bold text-lg">
             <GraduationCap className="w-6 h-6 text-cyan-400" />
-            <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-              PORTIVA
-            </span>
+            <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">PORTIVA</span>
             <span className="text-slate-500 text-sm font-normal ml-2">/ Admin</span>
           </Link>
           <div className="flex items-center gap-3">
-            <Link
-              to="/showcase"
-              className="px-3 py-1.5 text-sm text-slate-400 hover:text-white transition-colors"
-            >
-              Lihat Showcase
-            </Link>
-            <span className="text-cyan-400 text-xs px-2.5 py-1 rounded bg-slate-900 border border-slate-800 font-medium">
-              Mode Admin
-            </span>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Keluar</span>
-            </button>
+            <Link to="/showcase" className="px-3 py-2 text-sm text-slate-400 hover:text-white transition-colors">Showcase</Link>
+            <span className="text-slate-600 text-sm truncate max-w-[120px] hidden sm:inline">{user.email}</span>
+            <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"><LogOut className="w-4 h-4"/>Keluar</button>
           </div>
         </div>
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        {/* TAB NAVIGATION */}
-        <div className="flex gap-2 border-b border-slate-800 mb-8 overflow-x-auto pb-1 scrollbar-none">
-          <button 
-            onClick={() => setActiveTab("portofolio")}
-            className={`flex items-center gap-2 px-5 py-3 font-semibold text-sm transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === "portofolio" ? "border-cyan-400 text-cyan-400" : "border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-700"
-            }`}
-          >
-            <Users className="w-4 h-4" /> Kelola Portofolio
-          </button>
-          <button 
-            onClick={() => setActiveTab("settings")}
-            className={`flex items-center gap-2 px-5 py-3 font-semibold text-sm transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === "settings" ? "border-cyan-400 text-cyan-400" : "border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-700"
-            }`}
-          >
-            <Settings className="w-4 h-4" /> Konten Website
+        {/* Flash message */}
+        {msg.text && (
+          <div className={`mb-6 flex items-center gap-2 p-4 rounded-xl border text-sm ${msg.type === "error" ? "bg-red-500/10 border-red-500/20 text-red-400" : "bg-green-500/10 border-green-500/20 text-green-400"}`}>
+            {msg.type === "error" ? <AlertCircle className="w-4 h-4" /> : <Check className="w-4 h-4" />}{msg.text}
+          </div>
+        )}
+
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-2xl font-bold">Kelola Portofolio</h1>
+            <p className="text-slate-400 text-sm mt-1">Tambah, edit, dan kelola portofolio siswa.</p>
+          </div>
+          <button onClick={openAdd} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold hover:from-cyan-400 hover:to-blue-500 transition-all cursor-pointer">
+            <Plus className="w-5 h-5" />Tambah Portofolio
           </button>
         </div>
 
-        {/* Flash message */}
-        {msg.text && (
-          <div
-            className={`mb-6 flex items-center gap-2 p-4 rounded-xl border text-sm animate-fade-in-up ${
-              msg.type === "error"
-                ? "bg-red-500/10 border-red-500/20 text-red-400"
-                : "bg-green-500/10 border-green-500/20 text-green-400"
-            }`}
-          >
-            {msg.type === "error" ? <AlertCircle className="w-4 h-4 shrink-0" /> : <Check className="w-4 h-4 shrink-0" />}
-            <span>{msg.text}</span>
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-900 border border-slate-800/60">
+            <div className="p-2.5 rounded-lg bg-slate-800"><Users className="w-5 h-5 text-cyan-400"/></div>
+            <div><p className="text-2xl font-bold">{portfolios.length}</p><p className="text-slate-500 text-sm">Total</p></div>
           </div>
-        )}
-
-        {/* TAB 1: PORTOFOLIO */}
-        {activeTab === "portofolio" && (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2">
-              <div>
-                <h1 className="text-2xl font-bold">Kelola Portofolio Siswa</h1>
-                <p className="text-slate-400 text-sm mt-1">
-                  Tambah, edit, hapus, dan verifikasi persetujuan link karya siswa.
-                </p>
-              </div>
-              <button
-                onClick={openAdd}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold hover:from-cyan-400 hover:to-blue-500 transition-all cursor-pointer shadow-lg shadow-cyan-500/20"
-              >
-                <Plus className="w-5 h-5" />
-                <span>Tambah Portofolio</span>
-              </button>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-900 border border-slate-800/60">
-                <div className="p-2.5 rounded-lg bg-slate-800">
-                  <Users className="w-5 h-5 text-cyan-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{portfolios.length}</p>
-                  <p className="text-slate-500 text-xs">Total Portofolio</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-900 border border-slate-800/60">
-                <div className="p-2.5 rounded-lg bg-slate-800">
-                  <Check className="w-5 h-5 text-green-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{approved}</p>
-                  <p className="text-slate-500 text-xs">Disetujui (Tayang)</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-900 border border-slate-800/60">
-                <div className="p-2.5 rounded-lg bg-slate-800">
-                  <X className="w-5 h-5 text-yellow-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{portfolios.length - approved}</p>
-                  <p className="text-slate-500 text-xs">Menunggu Persetujuan</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Table */}
-            {loading ? (
-              <div className="flex justify-center py-20">
-                <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-              </div>
-            ) : (
-              <div className="overflow-x-auto rounded-xl border border-slate-800/60 bg-slate-900/60">
-                <table className="w-full text-left">
-                  <thead className="bg-slate-900/80 border-b border-slate-800">
-                    <tr>
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Siswa</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Jurusan</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden md:table-cell">URL Canva</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Status</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60 text-sm">
-                    {portfolios.map((p) => (
-                      <tr key={p.id} className="hover:bg-slate-800/40 transition-colors">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 text-white font-bold text-xs shrink-0">
-                              {p.nama.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <p className="text-white font-medium">{p.nama}</p>
-                              {p.deskripsi && (
-                                <p className="text-slate-500 text-xs truncate max-w-[200px]">
-                                  {p.deskripsi}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="px-2.5 py-1 rounded-full bg-slate-800 text-cyan-300 text-xs font-medium">
-                            {p.jurusan}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 hidden md:table-cell">
-                          <a
-                            href={p.canva_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-cyan-400 hover:text-cyan-300 text-xs truncate block max-w-[220px]"
-                          >
-                            {p.canva_url}
-                          </a>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <button
-                            onClick={() => toggleApproval(p.id, p.is_approved)}
-                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
-                              p.is_approved
-                                ? "bg-green-500/15 text-green-400 border border-green-500/30 hover:bg-green-500/25"
-                                : "bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/25"
-                            }`}
-                          >
-                            {p.is_approved ? (
-                              <><Check className="w-3 h-3" /> Approved</>
-                            ) : (
-                              <><X className="w-3 h-3" /> Pending</>
-                            )}
-                          </button>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              onClick={() => openEdit(p)}
-                              className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-cyan-400 transition-colors cursor-pointer"
-                              title="Edit"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(p.id, p.nama)}
-                              className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
-                              title="Hapus"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {portfolios.length === 0 && (
-                      <tr>
-                        <td colSpan={5} className="px-4 py-16 text-center text-slate-500">
-                          Belum ada data portofolio.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
+          <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-900 border border-slate-800/60">
+            <div className="p-2.5 rounded-lg bg-slate-800"><Check className="w-5 h-5 text-green-400"/></div>
+            <div><p className="text-2xl font-bold">{approved}</p><p className="text-slate-500 text-sm">Disetujui</p></div>
           </div>
-        )}
+          <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-900 border border-slate-800/60">
+            <div className="p-2.5 rounded-lg bg-slate-800"><X className="w-5 h-5 text-yellow-400"/></div>
+            <div><p className="text-2xl font-bold">{portfolios.length - approved}</p><p className="text-slate-500 text-sm">Pending</p></div>
+          </div>
+        </div>
 
-        {/* TAB 2: SETTINGS CMS */}
-        {activeTab === "settings" && (
-          <div className="max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-            <div className="mb-6">
-              <h2 className="text-xl font-bold text-white">Ubah Konten Halaman Utama</h2>
-              <p className="text-slate-400 text-sm mt-1">Perbarui teks informasi kegiatan yang tampil di Landing Page.</p>
-            </div>
-
-            <div className="space-y-5">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-300">Nama Kegiatan</label>
-                <input
-                  type="text"
-                  value={settings.event_name}
-                  onChange={(e) => setSettings({ ...settings, event_name: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-300">Deskripsi / Subjudul</label>
-                <textarea
-                  value={settings.event_description}
-                  onChange={(e) => setSettings({ ...settings, event_description: e.target.value })}
-                  rows={4}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-300">Tanggal Kegiatan</label>
-                  <input
-                    type="text"
-                    value={settings.event_date}
-                    onChange={(e) => setSettings({ ...settings, event_date: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-300">Lokasi Acara</label>
-                  <input
-                    type="text"
-                    value={settings.event_location}
-                    onChange={(e) => setSettings({ ...settings, event_location: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-slate-800">
-                <button
-                  onClick={handleSaveSettings}
-                  disabled={savingSettings}
-                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold transition-all shadow-lg shadow-cyan-500/25 disabled:opacity-50"
-                >
-                  {savingSettings ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                  <span>Simpan Konten Website</span>
-                </button>
-              </div>
-            </div>
+        {/* Table */}
+        {loading ? (
+          <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 text-cyan-400 animate-spin"/></div>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-slate-800/60">
+            <table className="w-full text-left">
+              <thead className="bg-slate-900/80">
+                <tr>
+                  <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Siswa</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Jurusan</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden md:table-cell">URL</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Status</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {portfolios.map(p => (
+                  <tr key={p.id} className="hover:bg-slate-900/50 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 text-white font-bold text-xs shrink-0">{p.nama.charAt(0).toUpperCase()}</div>
+                        <div><p className="text-white font-medium text-sm">{p.nama}</p>{p.deskripsi&&<p className="text-slate-500 text-xs truncate max-w-[200px]">{p.deskripsi}</p>}</div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3"><span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 text-xs font-medium">{p.jurusan}</span></td>
+                    <td className="px-4 py-3 hidden md:table-cell"><a href={p.canva_url} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300 text-xs truncate block max-w-[200px]">{p.canva_url}</a></td>
+                    <td className="px-4 py-3 text-center">
+                      <button onClick={() => toggleApproval(p.id, p.is_approved)} className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${p.is_approved ? "bg-green-500/15 text-green-400 border border-green-500/30 hover:bg-green-500/25" : "bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/25"}`}>
+                        {p.is_approved ? <><Check className="w-3 h-3"/>Approved</> : <><X className="w-3 h-3"/>Pending</>}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <button onClick={() => openEdit(p)} className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-cyan-400 transition-colors cursor-pointer" title="Edit"><Pencil className="w-4 h-4"/></button>
+                        <button onClick={() => handleDelete(p.id, p.nama)} className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-red-400 transition-colors cursor-pointer" title="Hapus"><Trash2 className="w-4 h-4"/></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {portfolios.length === 0 && (
+                  <tr><td colSpan={5} className="px-4 py-16 text-center text-slate-500">Belum ada data portofolio.</td></tr>
+                )}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
 
       {/* Modal */}
-      {showModal && (
-        <PortfolioModal
-          form={form}
-          setForm={setForm}
-          onSave={handleSave}
-          onClose={() => setShowModal(false)}
-          saving={saving}
-          isEdit={!!editId}
-        />
-      )}
+      {showModal && <PortfolioModal form={form} setForm={setForm} onSave={handleSave} onClose={() => setShowModal(false)} saving={saving} isEdit={!!editId} />}
     </div>
   );
 }

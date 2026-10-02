@@ -1,182 +1,436 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import { 
-  Monitor, Layout, Code2, Users, Target, Rocket, CheckCircle2, Star, 
-  MapPin, Calendar, Clock, ArrowRight, BookOpen, GraduationCap, Sparkles 
+import {
+  Sparkles,
+  Monitor,
+  Users,
+  GraduationCap,
+  ArrowRight,
+  Target,
+  Briefcase,
+  Calendar,
+  MapPin,
+  Clock,
+  ShieldCheck,
+  CheckCircle2,
+  FileText,
+  Award,
+  Layers,
+  Code2,
+  Palette,
+  Network,
+  ChevronRight,
 } from "lucide-react";
 
-interface AppSettings {
-  event_name: string;
-  event_description: string;
-  event_date: string;
-  event_location: string;
-}
-
 export default function LandingPage() {
-  const [settings, setSettings] = useState<AppSettings>({
-    event_name: "Workshop Portofolio Digital",
-    event_description: "Membangun profil profesional siswa SMK yang siap bersaing di industri digital.",
-    event_date: "20 - 22 Agustus 2026",
-    event_location: "Aula Utama SMK"
-  });
-  const [loading, setLoading] = useState(true);
+  const [totalKarya, setTotalKarya] = useState(0);
+  const [totalJurusan, setTotalJurusan] = useState(0);
 
   useEffect(() => {
-    async function fetchSettings() {
-      const { data, error } = await supabase
-        .from("app_settings")
-        .select("*")
-        .eq("id", 1)
-        .single();
-        
-      if (data && !error) {
-        setSettings(data);
+    async function fetchStats() {
+      const { data } = await supabase
+        .from("portfolios")
+        .select("jurusan")
+        .eq("is_approved", true);
+      if (data) {
+        setTotalKarya(data.length);
+        setTotalJurusan(new Set(data.map((d) => d.jurusan)).size);
       }
-      setLoading(false);
     }
-    fetchSettings();
+    fetchStats();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white space-y-4">
-        <div className="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-slate-400 font-medium animate-pulse">Memuat data acara...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-slate-950 text-white selection:bg-cyan-500/30 overflow-hidden">
-      {/* ── Background Effects ── */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-cyan-600/20 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-600/20 rounded-full blur-[120px]" />
-      </div>
-
+    <div className="min-h-screen bg-slate-950 text-white selection:bg-cyan-500/30">
       {/* ── Navbar ── */}
-      <nav className="fixed top-0 w-full z-50 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16 sm:h-20">
-          <div className="flex items-center gap-2 sm:gap-3 font-bold text-lg sm:text-xl group cursor-pointer">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25 group-hover:scale-105 transition-transform">
-              <GraduationCap className="w-6 h-6" />
+      <nav className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+          <Link to="/" className="flex items-center gap-2 font-bold text-lg">
+            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/20">
+              <GraduationCap className="w-5 h-5" />
             </div>
-            <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent tracking-wide font-extrabold">
-              PORTIVA
-            </span>
-          </div>
-          <div className="flex items-center gap-4 sm:gap-6">
-            <Link to="/showcase" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
-              Galeri Siswa
+            <div>
+              <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent tracking-wide font-extrabold">
+                PORTIVA
+              </span>
+              <span className="text-xs text-slate-500 block -mt-1 font-normal">
+                SMK Showcase
+              </span>
+            </div>
+          </Link>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Link
+              to="/"
+              className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-cyan-400 bg-cyan-500/10 border border-cyan-500/20"
+            >
+              Info Kegiatan
             </Link>
-            <Link to="/admin" className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-full text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-white backdrop-blur-md">
+            <Link
+              to="/showcase"
+              className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors"
+            >
+              Galeri Portofolio
+            </Link>
+            <Link
+              to="/admin"
+              className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors"
+            >
               Admin
             </Link>
           </div>
         </div>
       </nav>
 
-      <main className="relative z-10 pt-24 pb-20">
-        {/* ── Hero Section ── */}
-        <section className="relative pt-12 pb-20 lg:pt-24 lg:pb-32 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto text-center space-y-8">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm font-medium animate-fade-in-up">
+      {/* ── Hero Section (Nama Kegiatan) ── */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-slate-950 to-slate-950" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-96 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-500/15 via-blue-600/10 to-transparent blur-2xl pointer-events-none" />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 sm:pt-28 sm:pb-32">
+          <div className="text-center space-y-8 max-w-4xl mx-auto">
+            {/* Badge Kegiatan */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs sm:text-sm font-medium backdrop-blur-sm shadow-inner">
               <Sparkles className="w-4 h-4 animate-pulse" />
-              <span>Pameran Karya Unggulan</span>
+              <span>Workshop Inovasi Digital &amp; Personal Branding Siswa SMK</span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight animate-fade-in-up animation-delay-100 text-balance leading-tight">
-              {settings.event_name}
+            {/* Nama Kegiatan Utama */}
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-tight">
+              <span className="text-white">Showcase Portofolio Digital</span>
+              <br />
+              <span className="bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-500 bg-clip-text text-transparent">
+                Siswa SMK Siap Kerja
+              </span>
             </h1>
-            
-            <p className="max-w-2xl mx-auto text-lg sm:text-xl text-slate-400 leading-relaxed animate-fade-in-up animation-delay-200">
-              {settings.event_description}
-            </p>
-            
-            <div className="flex flex-wrap items-center justify-center gap-4 pt-4 animate-fade-in-up animation-delay-300">
-              <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 shadow-sm">
-                <Calendar className="w-5 h-5 text-cyan-400" />
-                <span className="font-medium">{settings.event_date}</span>
-              </div>
-              <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 shadow-sm">
-                <MapPin className="w-5 h-5 text-blue-400" />
-                <span className="font-medium">{settings.event_location}</span>
-              </div>
-            </div>
 
-            <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up animation-delay-400">
-              <Link to="/showcase" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-lg hover:from-cyan-400 hover:to-blue-500 shadow-xl shadow-cyan-500/25 transition-all transform hover:-translate-y-1 hover:shadow-cyan-500/40">
-                Lihat Galeri Portofolio <ArrowRight className="w-5 h-5" />
+            {/* Deskripsi Kegiatan */}
+            <p className="max-w-3xl mx-auto text-slate-400 text-base sm:text-lg lg:text-xl leading-relaxed">
+              Program inkubasi dan pameran karya digital berbasis <span className="text-cyan-300 font-medium">Canva Site</span> yang
+              membekali siswa SMK dengan personal branding berstandar industri, portofolio interaktif, dan kesiapan kompetensi kerja nyata.
+            </p>
+
+            {/* Tombol Aksi */}
+            <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+              <Link
+                to="/showcase"
+                className="inline-flex items-center gap-2.5 px-8 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold hover:from-cyan-400 hover:to-blue-500 transition-all shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:translate-y-0"
+              >
+                <span>Buka Galeri Portofolio (Page 2)</span>
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+              <a
+                href="#kelengkapan"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl border border-slate-700/80 bg-slate-900/60 text-slate-300 font-semibold hover:bg-slate-800 hover:text-white hover:border-slate-600 transition-all"
+              >
+                Kelengkapan Kegiatan
+              </a>
+              <Link
+                to="/admin"
+                className="inline-flex items-center gap-1.5 px-5 py-3.5 rounded-xl text-slate-400 hover:text-cyan-400 font-medium text-sm transition-colors"
+              >
+                <span>+ Tambah Link Porto (Admin)</span>
               </Link>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* ── Rundown Section ── */}
-        <section className="py-20 bg-slate-900/50 border-y border-slate-800/50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-3xl font-bold text-white mb-4">Agenda Kegiatan</h2>
-              <p className="text-slate-400">Rangkaian acara selama tiga hari untuk membekali siswa dengan kemampuan membuat portofolio digital standar industri.</p>
+      {/* ── Quick Stats ── */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-10">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="flex items-center gap-4 p-5 rounded-2xl bg-slate-900/90 border border-slate-800/80 backdrop-blur-md shadow-xl">
+            <div className="p-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+              <Users className="w-6 h-6" />
             </div>
-            
-            <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-              {[
-                { day: "Hari 1", title: "Fundamental Portofolio", desc: "Pengenalan struktur portofolio UI/UX yang menjual, personal branding, & pemilihan platform.", icon: BookOpen },
-                { day: "Hari 2", title: "Workshop Praktik", desc: "Membuat desain portofolio menggunakan Canva/Figma. Hands-on pembuatan aset digital.", icon: Code2 },
-                { day: "Hari 3", title: "Showcase & Review", desc: "Publikasi portofolio, presentasi hasil karya, dan review langsung dari praktisi industri.", icon: Target }
-              ].map((item, i) => (
-                <div key={i} className="relative p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-cyan-500/50 transition-colors group">
-                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <item.icon className="w-24 h-24 text-cyan-500" />
-                  </div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-bold mb-4">
-                    <Clock className="w-3.5 h-3.5" /> {item.day}
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2 relative z-10">{item.title}</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed relative z-10">{item.desc}</p>
-                </div>
-              ))}
+            <div>
+              <p className="text-3xl font-extrabold text-white">{totalKarya}</p>
+              <p className="text-slate-400 text-xs sm:text-sm">Portofolio Terkurasi</p>
             </div>
           </div>
-        </section>
-
-        {/* ── Kompetensi Section ── */}
-        <section className="py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-3xl font-bold text-white mb-4">Kompetensi Keahlian</h2>
-              <p className="text-slate-400">Showcase ini menampilkan portofolio terbaik dari tiga program keahlian unggulan di sekolah kami.</p>
+          <div className="flex items-center gap-4 p-5 rounded-2xl bg-slate-900/90 border border-slate-800/80 backdrop-blur-md shadow-xl">
+            <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+              <Monitor className="w-6 h-6" />
             </div>
-
-            <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-              {[
-                { title: "RPL", name: "Rekayasa Perangkat Lunak", icon: Code2, color: "from-blue-500 to-indigo-600", border: "hover:border-blue-500/50" },
-                { title: "DKV", name: "Desain Komunikasi Visual", icon: Layout, color: "from-fuchsia-500 to-pink-600", border: "hover:border-fuchsia-500/50" },
-                { title: "TKJ", name: "Teknik Komputer & Jaringan", icon: Monitor, color: "from-emerald-500 to-teal-600", border: "hover:border-emerald-500/50" }
-              ].map((jurusan, i) => (
-                <div key={i} className={`p-6 rounded-2xl bg-slate-900 border border-slate-800 transition-colors group ${jurusan.border}`}>
-                  <div className={`w-14 h-14 rounded-xl mb-6 flex items-center justify-center bg-gradient-to-br ${jurusan.color} shadow-lg shadow-black/20 group-hover:scale-110 transition-transform`}>
-                    <jurusan.icon className="w-7 h-7 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-black text-white mb-1">{jurusan.title}</h3>
-                  <p className="text-slate-400 font-medium">{jurusan.name}</p>
-                </div>
-              ))}
+            <div>
+              <p className="text-3xl font-extrabold text-white">Canva Site</p>
+              <p className="text-slate-400 text-xs sm:text-sm">Platform Website Interaktif</p>
             </div>
           </div>
-        </section>
-      </main>
+          <div className="flex items-center gap-4 p-5 rounded-2xl bg-slate-900/90 border border-slate-800/80 backdrop-blur-md shadow-xl">
+            <div className="p-3.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+              <GraduationCap className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-3xl font-extrabold text-white">{totalJurusan > 0 ? `${totalJurusan} Jurusan` : "Multi-Jurusan"}</p>
+              <p className="text-slate-400 text-xs sm:text-sm">RPL, DKV, TKJ, &amp; Lainnya</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Section: Kelengkapan Kegiatan ── */}
+      <section id="kelengkapan" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28">
+        <div className="text-center mb-16 space-y-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium">
+            <Layers className="w-3.5 h-3.5 text-cyan-400" />
+            Kelengkapan &amp; Instrumen Kegiatan
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
+            Detail &amp; Kelengkapan Workshop
+          </h2>
+          <p className="text-slate-400 max-w-2xl mx-auto text-sm sm:text-base">
+            Seluruh rincian pelaksanaan kegiatan, fasilitas workshop, tahapan pengerjaan portofolio, hingga indikator penilaian industri.
+          </p>
+        </div>
+
+        {/* 1. Detail Parameter Kegiatan */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
+          {[
+            {
+              icon: Calendar,
+              title: "Waktu Pelaksanaan",
+              detail: "Oktober 2025",
+              sub: "Workshop Intensif 3 Hari",
+            },
+            {
+              icon: MapPin,
+              title: "Tempat / Media",
+              detail: "Lab Multimedia & Web",
+              sub: "SMK Pusat Keunggulan",
+            },
+            {
+              icon: Target,
+              title: "Sasaran Peserta",
+              detail: "Siswa Kelas XII",
+              sub: "Persiapan PKL & Kerja",
+            },
+            {
+              icon: Monitor,
+              title: "Platform Karya",
+              detail: "Canva Site + Live Hosting",
+              sub: "Domain responsif interaktif",
+            },
+          ].map((item, i) => (
+            <div
+              key={i}
+              className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition-colors"
+            >
+              <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-cyan-400 mb-4">
+                <item.icon className="w-5 h-5" />
+              </div>
+              <p className="text-slate-500 text-xs uppercase tracking-wider font-semibold">
+                {item.title}
+              </p>
+              <p className="text-white font-bold text-lg mt-1">{item.detail}</p>
+              <p className="text-slate-400 text-xs mt-1">{item.sub}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* 2. Rundown & Tahapan Kegiatan */}
+        <div className="mb-16">
+          <h3 className="text-xl sm:text-2xl font-bold text-white mb-6 flex items-center gap-2">
+            <Clock className="w-5 h-5 text-cyan-400" />
+            Rundown &amp; Alur Pelaksanaan Kegiatan
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                hari: "Hari Ke-1",
+                judul: "Personal Branding & Pondasi Portofolio",
+                poin: [
+                  "Prinsip personal branding di era digital & industri 4.0",
+                  "Pemetaan skill, keahlian khusus, dan sertifikasi",
+                  "Pengenalan Canva Site builder & struktur halaman web",
+                ],
+              },
+              {
+                hari: "Hari Ke-2",
+                judul: "Kurasi Karya & Produksi Website",
+                poin: [
+                  "Kurasi 3-5 karya unggulan sesuai bidang keahlian",
+                  "Desain layout interaktif, tipografi, dan navigasi",
+                  "Penyusunan studi kasus proyek (Problem-Solution)",
+                ],
+              },
+              {
+                hari: "Hari Ke-3",
+                judul: "Finalisasi, Kurasi, & Showcase Digital",
+                poin: [
+                  "Publishing Canva Site ke domain publik",
+                  "Kurasi dan review oleh guru pembimbing & mentor",
+                  "Entri data ke portal showcase PORTIVA untuk siap diakses",
+                ],
+              },
+            ].map((step, i) => (
+              <div
+                key={i}
+                className="relative p-6 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-900/60 border border-slate-800 flex flex-col justify-between"
+              >
+                <div>
+                  <span className="inline-block px-3 py-1 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold mb-3">
+                    {step.hari}
+                  </span>
+                  <h4 className="text-lg font-bold text-white mb-4">
+                    {step.judul}
+                  </h4>
+                  <ul className="space-y-2.5 text-sm text-slate-400">
+                    {step.poin.map((p, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                        <span>{p}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 3. Fasilitas & Kelengkapan Pendukung */}
+        <div className="mb-16">
+          <h3 className="text-xl sm:text-2xl font-bold text-white mb-6 flex items-center gap-2">
+            <Award className="w-5 h-5 text-blue-400" />
+            Fasilitas &amp; Kelengkapan Workshop
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              {
+                icon: FileText,
+                title: "Modul & Template",
+                desc: "Template Canva Site premium yang siap dikustomisasi sesuai identitas siswa.",
+              },
+              {
+                icon: Monitor,
+                title: "Akses Lab Komputer",
+                desc: "Perangkat PC spesifikasi multimedia dan koneksi internet stabil.",
+              },
+              {
+                icon: Briefcase,
+                title: "Mentoring Industri",
+                desc: "Bimbingan langsung dari praktisi teknologi dan desain komunikasi visual.",
+              },
+              {
+                icon: ShieldCheck,
+                title: "Kurasi & Verifikasi",
+                desc: "Sistem approval portofolio untuk memastikan kualitas standar industri.",
+              },
+            ].map((item, i) => (
+              <div
+                key={i}
+                className="p-5 rounded-2xl bg-slate-900/40 border border-slate-800/70"
+              >
+                <div className="p-2.5 rounded-xl bg-slate-800 w-fit mb-3 text-cyan-400">
+                  <item.icon className="w-5 h-5" />
+                </div>
+                <h4 className="text-white font-semibold text-base mb-1">
+                  {item.title}
+                </h4>
+                <p className="text-slate-400 text-xs leading-relaxed">
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 4. Program Keahlian / Jurusan Peserta */}
+        <div>
+          <h3 className="text-xl sm:text-2xl font-bold text-white mb-6 flex items-center gap-2">
+            <GraduationCap className="w-5 h-5 text-cyan-400" />
+            Program Keahlian Terlibat
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                icon: Code2,
+                nama: "Rekayasa Perangkat Lunak (RPL)",
+                fokus: "Web Application, UI/UX Design, REST API, Database Management, Mobile Apps.",
+                badge: "Software Engineering",
+              },
+              {
+                icon: Palette,
+                nama: "Desain Komunikasi Visual (DKV)",
+                fokus: "Branding & Identity, Motion Graphic, Ilustrasi Digital, Social Media Assets, Packaging.",
+                badge: "Visual Design",
+              },
+              {
+                icon: Network,
+                nama: "Teknik Komputer & Jaringan (TKJ)",
+                fokus: "Network Infrastructure, Server Administration, Cloud Computing, Cyber Security, Mikrotik.",
+                badge: "IT Infrastructure",
+              },
+            ].map((jurusan, i) => (
+              <div
+                key={i}
+                className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-cyan-500/30 transition-colors"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-xl bg-slate-800 text-cyan-400">
+                    <jurusan.icon className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 font-medium">
+                    {jurusan.badge}
+                  </span>
+                </div>
+                <h4 className="text-lg font-bold text-white mb-2">
+                  {jurusan.nama}
+                </h4>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  <span className="text-slate-300 font-medium">Fokus Karya:</span> {jurusan.fokus}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Section CTA Menuju Page 2 ── */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
+        <div className="relative overflow-hidden p-8 sm:p-12 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-700/60 text-center shadow-2xl">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative z-10 max-w-2xl mx-auto space-y-6">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold">
+              <Sparkles className="w-3.5 h-3.5" />
+              Page 2: Galeri Portofolio
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
+              Lihat Karya Portofolio Siswa Sekarang
+            </h2>
+            <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
+              Jelajahi karya Canva Site interaktif lengkap dengan fitur rotasi otomatis 10 detik, live viewer responsif, dan filter per jurusan.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
+              <Link
+                to="/showcase"
+                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold hover:from-cyan-400 hover:to-blue-500 transition-all shadow-lg shadow-cyan-500/25"
+              >
+                <span>Buka Showcase Portofolio</span>
+                <ChevronRight className="w-5 h-5" />
+              </Link>
+              <Link
+                to="/admin"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl border border-slate-700 text-slate-300 font-medium hover:bg-slate-800 transition-colors text-sm"
+              >
+                <span>Kelola Link Siswa (Admin)</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ── Footer ── */}
       <footer className="border-t border-slate-800/80 bg-slate-950 py-10 text-center text-slate-500 text-sm">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col items-center justify-center space-y-4">
-          <div className="flex items-center gap-2 font-bold text-slate-400">
-            <GraduationCap className="w-5 h-5" />
-            <span>PORTIVA</span>
+        <div className="max-w-7xl mx-auto px-4 space-y-3">
+          <div className="flex items-center justify-center gap-2 text-slate-400 font-semibold">
+            <GraduationCap className="w-5 h-5 text-cyan-400" />
+            <span>PORTIVA — Showcase Portofolio Canva Site Siswa SMK Siap Kerja</span>
           </div>
-          <p>© 2026 {settings.event_name}. All rights reserved.</p>
+          <p className="text-slate-600 text-xs">
+            &copy; {new Date().getFullYear()} Workshop Inovasi &amp; Personal Branding SMK. Hak Cipta Dilindungi.
+          </p>
         </div>
       </footer>
     </div>
