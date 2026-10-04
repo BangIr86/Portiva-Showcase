@@ -399,11 +399,7 @@ export default function AdminPage() {
     setSavingSettings(true);
     try {
       const parsed = JSON.parse(jsonText);
-      const { error } = await supabase.from("app_settings").upsert({ 
-        id: 1, 
-        landing_content: parsed,
-        event_name: "PORTIVA Showcase" 
-      });
+      const { error } = await supabase.from("app_settings").upsert({ id: 1, landing_content: parsed });
       if (error) throw error;
       flash("Konten website (JSON) berhasil diperbarui!");
     } catch (e: any) {
