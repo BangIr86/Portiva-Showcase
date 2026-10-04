@@ -23,22 +23,89 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+// Default content fallback in case database is empty or error
+const defaultLandingData = {
+  hero: {
+    badge: "Workshop Inovasi Digital & Personal Branding Siswa SMK",
+    title1: "Showcase Portofolio Digital",
+    title2: "Siswa SMK Siap Kerja",
+    desc: "Program inkubasi dan pameran karya digital berbasis Canva Site yang membekali siswa SMK dengan personal branding berstandar industri, portofolio interaktif, dan kesiapan kompetensi kerja nyata."
+  },
+  details: [
+    { title: "Waktu Pelaksanaan", detail: "Oktober 2025", sub: "Workshop Intensif 3 Hari", iconName: "Calendar" },
+    { title: "Tempat / Media", detail: "Lab Multimedia & Web", sub: "SMK Pusat Keunggulan", iconName: "MapPin" },
+    { title: "Sasaran Peserta", detail: "Siswa Kelas XII", sub: "Persiapan PKL & Kerja", iconName: "Target" },
+    { title: "Platform Karya", detail: "Canva Site + Live Hosting", sub: "Domain responsif interaktif", iconName: "Monitor" }
+  ],
+  rundown: [
+    {
+      hari: "Hari Ke-1",
+      judul: "Personal Branding & Pondasi Portofolio",
+      poin: [
+        "Prinsip personal branding di era digital & industri 4.0",
+        "Pemetaan skill, keahlian khusus, dan sertifikasi",
+        "Pengenalan Canva Site builder & struktur halaman web"
+      ]
+    },
+    {
+      hari: "Hari Ke-2",
+      judul: "Kurasi Karya & Produksi Website",
+      poin: [
+        "Kurasi 3-5 karya unggulan sesuai bidang keahlian",
+        "Desain layout interaktif, tipografi, dan navigasi",
+        "Penyusunan studi kasus proyek (Problem-Solution)"
+      ]
+    },
+    {
+      hari: "Hari Ke-3",
+      judul: "Finalisasi, Kurasi, & Showcase Digital",
+      poin: [
+        "Publishing Canva Site ke domain publik",
+        "Kurasi dan review oleh guru pembimbing & mentor",
+        "Entri data ke portal showcase PORTIVA untuk siap diakses"
+      ]
+    }
+  ],
+  fasilitas: [
+    { title: "Modul & Template", desc: "Template Canva Site premium yang siap dikustomisasi sesuai identitas siswa.", iconName: "FileText" },
+    { title: "Akses Lab Komputer", desc: "Perangkat PC spesifikasi multimedia dan koneksi internet stabil.", iconName: "Monitor" },
+    { title: "Mentoring Industri", desc: "Bimbingan langsung dari praktisi teknologi dan desain komunikasi visual.", iconName: "Briefcase" },
+    { title: "Kurasi & Verifikasi", desc: "Sistem approval portofolio untuk memastikan kualitas standar industri.", iconName: "ShieldCheck" }
+  ],
+  jurusan: [
+    { nama: "Rekayasa Perangkat Lunak (RPL)", fokus: "Web Application, UI/UX Design, REST API, Database Management, Mobile Apps.", badge: "Software Engineering", iconName: "Code2" },
+    { nama: "Desain Komunikasi Visual (DKV)", fokus: "Branding & Identity, Motion Graphic, Ilustrasi Digital, Social Media Assets, Packaging.", badge: "Visual Design", iconName: "Palette" },
+    { nama: "Teknik Komputer & Jaringan (TKJ)", fokus: "Network Infrastructure, Server Administration, Cloud Computing, Cyber Security, Mikrotik.", badge: "IT Infrastructure", iconName: "Network" }
+  ]
+};
+
+// Helper for dynamic icons
+const iconMap: Record<string, React.ElementType> = {
+  Calendar, MapPin, Target, Monitor, FileText, Briefcase, ShieldCheck, Code2, Palette, Network
+};
+
 export default function LandingPage() {
   const [totalKarya, setTotalKarya] = useState(0);
   const [totalJurusan, setTotalJurusan] = useState(0);
+  const [content, setContent] = useState(defaultLandingData);
 
   useEffect(() => {
-    async function fetchStats() {
-      const { data } = await supabase
-        .from("portfolios")
-        .select("jurusan")
-        .eq("is_approved", true);
-      if (data) {
-        setTotalKarya(data.length);
-        setTotalJurusan(new Set(data.map((d) => d.jurusan)).size);
+    async function fetchData() {
+      // Fetch stats
+      const { data: portos } = await supabase.from("portfolios").select("jurusan").eq("is_approved", true);
+      if (portos) {
+        setTotalKarya(portos.length);
+        setTotalJurusan(new Set(portos.map((d) => d.jurusan)).size);
+      }
+
+      // Fetch dynamic content
+      const { data: settings } = await supabase.from("app_settings").select("landing_content").eq("id", 1).single();
+      if (settings?.landing_content) {
+        // Merge with default to ensure no missing keys if user deletes them
+        setContent({ ...defaultLandingData, ...settings.landing_content });
       }
     }
-    fetchStats();
+    fetchData();
   }, []);
 
   return (
@@ -82,35 +149,30 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* ── Hero Section (Nama Kegiatan) ── */}
+      {/* ── Hero Section ── */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-slate-950 to-slate-950" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-96 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-500/15 via-blue-600/10 to-transparent blur-2xl pointer-events-none" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 sm:pt-28 sm:pb-32">
           <div className="text-center space-y-8 max-w-4xl mx-auto">
-            {/* Badge Kegiatan */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs sm:text-sm font-medium backdrop-blur-sm shadow-inner">
               <Sparkles className="w-4 h-4 animate-pulse" />
-              <span>Workshop Inovasi Digital &amp; Personal Branding Siswa SMK</span>
+              <span>{content.hero.badge}</span>
             </div>
 
-            {/* Nama Kegiatan Utama */}
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-tight">
-              <span className="text-white">Showcase Portofolio Digital</span>
+              <span className="text-white">{content.hero.title1}</span>
               <br />
               <span className="bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-500 bg-clip-text text-transparent">
-                Siswa SMK Siap Kerja
+                {content.hero.title2}
               </span>
             </h1>
 
-            {/* Deskripsi Kegiatan */}
             <p className="max-w-3xl mx-auto text-slate-400 text-base sm:text-lg lg:text-xl leading-relaxed">
-              Program inkubasi dan pameran karya digital berbasis <span className="text-cyan-300 font-medium">Canva Site</span> yang
-              membekali siswa SMK dengan personal branding berstandar industri, portofolio interaktif, dan kesiapan kompetensi kerja nyata.
+              {content.hero.desc}
             </p>
 
-            {/* Tombol Aksi */}
             <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
               <Link
                 to="/showcase"
@@ -163,7 +225,7 @@ export default function LandingPage() {
             </div>
             <div>
               <p className="text-3xl font-extrabold text-white">{totalJurusan > 0 ? `${totalJurusan} Jurusan` : "Multi-Jurusan"}</p>
-              <p className="text-slate-400 text-xs sm:text-sm">RPL, DKV, TKJ, &amp; Lainnya</p>
+              <p className="text-slate-400 text-xs sm:text-sm">Kolaborasi Antar Bidang</p>
             </div>
           </div>
         </div>
@@ -171,61 +233,22 @@ export default function LandingPage() {
 
       {/* ── Section: Kelengkapan Kegiatan ── */}
       <section id="kelengkapan" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28">
-        <div className="text-center mb-16 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium">
-            <Layers className="w-3.5 h-3.5 text-cyan-400" />
-            Kelengkapan &amp; Instrumen Kegiatan
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
-            Detail &amp; Kelengkapan Workshop
-          </h2>
-          <p className="text-slate-400 max-w-2xl mx-auto text-sm sm:text-base">
-            Seluruh rincian pelaksanaan kegiatan, fasilitas workshop, tahapan pengerjaan portofolio, hingga indikator penilaian industri.
-          </p>
-        </div>
-
+        
         {/* 1. Detail Parameter Kegiatan */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
-          {[
-            {
-              icon: Calendar,
-              title: "Waktu Pelaksanaan",
-              detail: "Oktober 2025",
-              sub: "Workshop Intensif 3 Hari",
-            },
-            {
-              icon: MapPin,
-              title: "Tempat / Media",
-              detail: "Lab Multimedia & Web",
-              sub: "SMK Pusat Keunggulan",
-            },
-            {
-              icon: Target,
-              title: "Sasaran Peserta",
-              detail: "Siswa Kelas XII",
-              sub: "Persiapan PKL & Kerja",
-            },
-            {
-              icon: Monitor,
-              title: "Platform Karya",
-              detail: "Canva Site + Live Hosting",
-              sub: "Domain responsif interaktif",
-            },
-          ].map((item, i) => (
-            <div
-              key={i}
-              className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition-colors"
-            >
-              <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-cyan-400 mb-4">
-                <item.icon className="w-5 h-5" />
+          {content.details.map((item, i) => {
+            const IconComponent = iconMap[item.iconName as string] || Target;
+            return (
+              <div key={i} className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition-colors">
+                <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-cyan-400 mb-4">
+                  <IconComponent className="w-5 h-5" />
+                </div>
+                <p className="text-slate-500 text-xs uppercase tracking-wider font-semibold">{item.title}</p>
+                <p className="text-white font-bold text-lg mt-1">{item.detail}</p>
+                <p className="text-slate-400 text-xs mt-1">{item.sub}</p>
               </div>
-              <p className="text-slate-500 text-xs uppercase tracking-wider font-semibold">
-                {item.title}
-              </p>
-              <p className="text-white font-bold text-lg mt-1">{item.detail}</p>
-              <p className="text-slate-400 text-xs mt-1">{item.sub}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* 2. Rundown & Tahapan Kegiatan */}
@@ -235,46 +258,13 @@ export default function LandingPage() {
             Rundown &amp; Alur Pelaksanaan Kegiatan
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                hari: "Hari Ke-1",
-                judul: "Personal Branding & Pondasi Portofolio",
-                poin: [
-                  "Prinsip personal branding di era digital & industri 4.0",
-                  "Pemetaan skill, keahlian khusus, dan sertifikasi",
-                  "Pengenalan Canva Site builder & struktur halaman web",
-                ],
-              },
-              {
-                hari: "Hari Ke-2",
-                judul: "Kurasi Karya & Produksi Website",
-                poin: [
-                  "Kurasi 3-5 karya unggulan sesuai bidang keahlian",
-                  "Desain layout interaktif, tipografi, dan navigasi",
-                  "Penyusunan studi kasus proyek (Problem-Solution)",
-                ],
-              },
-              {
-                hari: "Hari Ke-3",
-                judul: "Finalisasi, Kurasi, & Showcase Digital",
-                poin: [
-                  "Publishing Canva Site ke domain publik",
-                  "Kurasi dan review oleh guru pembimbing & mentor",
-                  "Entri data ke portal showcase PORTIVA untuk siap diakses",
-                ],
-              },
-            ].map((step, i) => (
-              <div
-                key={i}
-                className="relative p-6 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-900/60 border border-slate-800 flex flex-col justify-between"
-              >
+            {content.rundown.map((step, i) => (
+              <div key={i} className="relative p-6 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-900/60 border border-slate-800 flex flex-col justify-between">
                 <div>
                   <span className="inline-block px-3 py-1 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold mb-3">
                     {step.hari}
                   </span>
-                  <h4 className="text-lg font-bold text-white mb-4">
-                    {step.judul}
-                  </h4>
+                  <h4 className="text-lg font-bold text-white mb-4">{step.judul}</h4>
                   <ul className="space-y-2.5 text-sm text-slate-400">
                     {step.poin.map((p, idx) => (
                       <li key={idx} className="flex items-start gap-2">
@@ -296,43 +286,18 @@ export default function LandingPage() {
             Fasilitas &amp; Kelengkapan Workshop
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              {
-                icon: FileText,
-                title: "Modul & Template",
-                desc: "Template Canva Site premium yang siap dikustomisasi sesuai identitas siswa.",
-              },
-              {
-                icon: Monitor,
-                title: "Akses Lab Komputer",
-                desc: "Perangkat PC spesifikasi multimedia dan koneksi internet stabil.",
-              },
-              {
-                icon: Briefcase,
-                title: "Mentoring Industri",
-                desc: "Bimbingan langsung dari praktisi teknologi dan desain komunikasi visual.",
-              },
-              {
-                icon: ShieldCheck,
-                title: "Kurasi & Verifikasi",
-                desc: "Sistem approval portofolio untuk memastikan kualitas standar industri.",
-              },
-            ].map((item, i) => (
-              <div
-                key={i}
-                className="p-5 rounded-2xl bg-slate-900/40 border border-slate-800/70"
-              >
-                <div className="p-2.5 rounded-xl bg-slate-800 w-fit mb-3 text-cyan-400">
-                  <item.icon className="w-5 h-5" />
+            {content.fasilitas.map((item, i) => {
+              const IconComponent = iconMap[item.iconName as string] || FileText;
+              return (
+                <div key={i} className="p-5 rounded-2xl bg-slate-900/40 border border-slate-800/70">
+                  <div className="p-2.5 rounded-xl bg-slate-800 w-fit mb-3 text-cyan-400">
+                    <IconComponent className="w-5 h-5" />
+                  </div>
+                  <h4 className="text-white font-semibold text-base mb-1">{item.title}</h4>
+                  <p className="text-slate-400 text-xs leading-relaxed">{item.desc}</p>
                 </div>
-                <h4 className="text-white font-semibold text-base mb-1">
-                  {item.title}
-                </h4>
-                <p className="text-slate-400 text-xs leading-relaxed">
-                  {item.desc}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -343,46 +308,25 @@ export default function LandingPage() {
             Program Keahlian Terlibat
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                icon: Code2,
-                nama: "Rekayasa Perangkat Lunak (RPL)",
-                fokus: "Web Application, UI/UX Design, REST API, Database Management, Mobile Apps.",
-                badge: "Software Engineering",
-              },
-              {
-                icon: Palette,
-                nama: "Desain Komunikasi Visual (DKV)",
-                fokus: "Branding & Identity, Motion Graphic, Ilustrasi Digital, Social Media Assets, Packaging.",
-                badge: "Visual Design",
-              },
-              {
-                icon: Network,
-                nama: "Teknik Komputer & Jaringan (TKJ)",
-                fokus: "Network Infrastructure, Server Administration, Cloud Computing, Cyber Security, Mikrotik.",
-                badge: "IT Infrastructure",
-              },
-            ].map((jurusan, i) => (
-              <div
-                key={i}
-                className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-cyan-500/30 transition-colors"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 rounded-xl bg-slate-800 text-cyan-400">
-                    <jurusan.icon className="w-6 h-6" />
+            {content.jurusan.map((jurusan, i) => {
+              const IconComponent = iconMap[jurusan.iconName as string] || Monitor;
+              return (
+                <div key={i} className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-cyan-500/30 transition-colors">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 rounded-xl bg-slate-800 text-cyan-400">
+                      <IconComponent className="w-6 h-6" />
+                    </div>
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 font-medium">
+                      {jurusan.badge}
+                    </span>
                   </div>
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 font-medium">
-                    {jurusan.badge}
-                  </span>
+                  <h4 className="text-lg font-bold text-white mb-2">{jurusan.nama}</h4>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    <span className="text-slate-300 font-medium">Fokus Karya:</span> {jurusan.fokus}
+                  </p>
                 </div>
-                <h4 className="text-lg font-bold text-white mb-2">
-                  {jurusan.nama}
-                </h4>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  <span className="text-slate-300 font-medium">Fokus Karya:</span> {jurusan.fokus}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -410,29 +354,10 @@ export default function LandingPage() {
                 <span>Buka Showcase Portofolio</span>
                 <ChevronRight className="w-5 h-5" />
               </Link>
-              <Link
-                to="/admin"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl border border-slate-700 text-slate-300 font-medium hover:bg-slate-800 transition-colors text-sm"
-              >
-                <span>Kelola Link Siswa (Admin)</span>
-              </Link>
             </div>
           </div>
         </div>
       </section>
-
-      {/* ── Footer ── */}
-      <footer className="border-t border-slate-800/80 bg-slate-950 py-10 text-center text-slate-500 text-sm">
-        <div className="max-w-7xl mx-auto px-4 space-y-3">
-          <div className="flex items-center justify-center gap-2 text-slate-400 font-semibold">
-            <GraduationCap className="w-5 h-5 text-cyan-400" />
-            <span>PORTIVA — Showcase Portofolio Canva Site Siswa SMK Siap Kerja</span>
-          </div>
-          <p className="text-slate-600 text-xs">
-            &copy; {new Date().getFullYear()} Workshop Inovasi &amp; Personal Branding SMK. Hak Cipta Dilindungi.
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

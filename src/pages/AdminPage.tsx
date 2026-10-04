@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import {
-  GraduationCap, LogIn, LogOut, Plus, Pencil, Trash2, Check, X, Loader2, Eye, EyeOff, Save, ArrowLeft, ShieldCheck, Users, AlertCircle, HelpCircle, Settings
+  GraduationCap, LogIn, LogOut, Plus, Pencil, Trash2, Check, X, Loader2, Eye, EyeOff, Save, ArrowLeft, ShieldCheck, Users, AlertCircle, HelpCircle, Settings, Code
 } from "lucide-react";
 
 interface Portfolio {
@@ -13,13 +13,6 @@ interface Portfolio {
   deskripsi: string;
   is_approved: boolean;
   created_at?: string;
-}
-
-interface SettingsData {
-  event_name: string;
-  event_description: string;
-  event_date: string;
-  event_location: string;
 }
 
 interface FormData {
@@ -33,6 +26,61 @@ interface FormData {
 const emptyForm: FormData = { nama: "", jurusan: "", canva_url: "", deskripsi: "", is_approved: false };
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSCODE || "adminportiva";
+
+const defaultLandingData = {
+  hero: {
+    badge: "Workshop Inovasi Digital & Personal Branding Siswa SMK",
+    title1: "Showcase Portofolio Digital",
+    title2: "Siswa SMK Siap Kerja",
+    desc: "Program inkubasi dan pameran karya digital berbasis Canva Site yang membekali siswa SMK dengan personal branding berstandar industri, portofolio interaktif, dan kesiapan kompetensi kerja nyata."
+  },
+  details: [
+    { title: "Waktu Pelaksanaan", detail: "Oktober 2025", sub: "Workshop Intensif 3 Hari" },
+    { title: "Tempat / Media", detail: "Lab Multimedia & Web", sub: "SMK Pusat Keunggulan" },
+    { title: "Sasaran Peserta", detail: "Siswa Kelas XII", sub: "Persiapan PKL & Kerja" },
+    { title: "Platform Karya", detail: "Canva Site + Live Hosting", sub: "Domain responsif interaktif" }
+  ],
+  rundown: [
+    {
+      hari: "Hari Ke-1",
+      judul: "Personal Branding & Pondasi Portofolio",
+      poin: [
+        "Prinsip personal branding di era digital & industri 4.0",
+        "Pemetaan skill, keahlian khusus, dan sertifikasi",
+        "Pengenalan Canva Site builder & struktur halaman web"
+      ]
+    },
+    {
+      hari: "Hari Ke-2",
+      judul: "Kurasi Karya & Produksi Website",
+      poin: [
+        "Kurasi 3-5 karya unggulan sesuai bidang keahlian",
+        "Desain layout interaktif, tipografi, dan navigasi",
+        "Penyusunan studi kasus proyek (Problem-Solution)"
+      ]
+    },
+    {
+      hari: "Hari Ke-3",
+      judul: "Finalisasi, Kurasi, & Showcase Digital",
+      poin: [
+        "Publishing Canva Site ke domain publik",
+        "Kurasi dan review oleh guru pembimbing & mentor",
+        "Entri data ke portal showcase PORTIVA untuk siap diakses"
+      ]
+    }
+  ],
+  fasilitas: [
+    { title: "Modul & Template", desc: "Template Canva Site premium yang siap dikustomisasi sesuai identitas siswa." },
+    { title: "Akses Lab Komputer", desc: "Perangkat PC spesifikasi multimedia dan koneksi internet stabil." },
+    { title: "Mentoring Industri", desc: "Bimbingan langsung dari praktisi teknologi dan desain komunikasi visual." },
+    { title: "Kurasi & Verifikasi", desc: "Sistem approval portofolio untuk memastikan kualitas standar industri." }
+  ],
+  jurusan: [
+    { nama: "Rekayasa Perangkat Lunak (RPL)", fokus: "Web Application, UI/UX Design, REST API, Database Management, Mobile Apps.", badge: "Software Engineering" },
+    { nama: "Desain Komunikasi Visual (DKV)", fokus: "Branding & Identity, Motion Graphic, Ilustrasi Digital, Social Media Assets, Packaging.", badge: "Visual Design" },
+    { nama: "Teknik Komputer & Jaringan (TKJ)", fokus: "Network Infrastructure, Server Administration, Cloud Computing, Cyber Security, Mikrotik.", badge: "IT Infrastructure" }
+  ]
+};
 
 /* ── Login Component ── */
 function LoginForm({ onLogin }: { onLogin: () => void }) {
@@ -245,10 +293,8 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState({ text: "", type: "" });
 
-  // Settings State
-  const [settings, setSettings] = useState<SettingsData>({
-    event_name: "", event_description: "", event_date: "", event_location: ""
-  });
+  // Settings State (Advanced JSON Editor)
+  const [jsonText, setJsonText] = useState("");
   const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
@@ -266,8 +312,12 @@ export default function AdminPage() {
     if (portData) setPortfolios(portData as Portfolio[]);
     
     // Fetch Settings
-    const { data: settsData } = await supabase.from("app_settings").select("*").eq("id", 1).single();
-    if (settsData) setSettings(settsData as SettingsData);
+    const { data: settsData } = await supabase.from("app_settings").select("landing_content").eq("id", 1).single();
+    if (settsData && settsData.landing_content) {
+      setJsonText(JSON.stringify(settsData.landing_content, null, 2));
+    } else {
+      setJsonText(JSON.stringify(defaultLandingData, null, 2));
+    }
 
     setLoading(false);
   }, []);
@@ -306,7 +356,6 @@ export default function AdminPage() {
     setSaving(true);
     let cleanUrl = form.canva_url.trim();
 
-    // Auto extract src if user pasted an iframe HTML tag
     const iframeMatch = cleanUrl.match(/src=["']([^"']+)["']/i);
     if (iframeMatch) cleanUrl = iframeMatch[1];
 
@@ -348,9 +397,14 @@ export default function AdminPage() {
   // SETTINGS ACTIONS
   async function handleSaveSettings() {
     setSavingSettings(true);
-    const { error } = await supabase.from("app_settings").upsert({ id: 1, ...settings });
-    if (error) flash("Gagal menyimpan konten: " + error.message, "error");
-    else flash("Konten halaman berhasil diperbarui!");
+    try {
+      const parsed = JSON.parse(jsonText);
+      const { error } = await supabase.from("app_settings").upsert({ id: 1, landing_content: parsed });
+      if (error) throw error;
+      flash("Konten website (JSON) berhasil diperbarui!");
+    } catch (e: any) {
+      flash("Format JSON tidak valid! Pastikan tidak ada tanda kutip yang hilang. " + (e.message || ""), "error");
+    }
     setSavingSettings(false);
   }
 
@@ -431,7 +485,7 @@ export default function AdminPage() {
               activeTab === "settings" ? "border-cyan-400 text-cyan-400" : "border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-700"
             }`}
           >
-            <Settings className="w-4 h-4" /> Konten Website
+            <Settings className="w-4 h-4" /> Semua Konten Website (JSON)
           </button>
         </div>
 
@@ -599,66 +653,35 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* TAB 2: SETTINGS CMS */}
+        {/* TAB 2: SETTINGS CMS (JSON EDITOR) */}
         {activeTab === "settings" && (
-          <div className="max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-            <div className="mb-6">
-              <h2 className="text-xl font-bold text-white">Ubah Konten Halaman Utama</h2>
-              <p className="text-slate-400 text-sm mt-1">Perbarui teks informasi kegiatan yang tampil di Landing Page.</p>
+          <div className="max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col h-[700px]">
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <Code className="w-5 h-5 text-cyan-400" />
+                Advanced Editor: Semua Konten Landing Page
+              </h2>
+              <p className="text-slate-400 text-sm mt-1">Ubah teks informasi, rundown, fasilitas, hingga detail jurusan langsung dari format data JSON di bawah ini. Pastikan Anda tidak menghapus tanda kutip (<code className="text-cyan-400">"</code>) pada struktur datanya.</p>
             </div>
 
-            <div className="space-y-5">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-300">Nama Kegiatan</label>
-                <input
-                  type="text"
-                  value={settings.event_name}
-                  onChange={(e) => setSettings({ ...settings, event_name: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all"
-                />
-              </div>
+            <div className="flex-1 min-h-0">
+              <textarea
+                value={jsonText}
+                onChange={(e) => setJsonText(e.target.value)}
+                className="w-full h-full p-4 rounded-xl bg-slate-950 border border-slate-700 text-emerald-400 font-mono text-[13px] outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all resize-none leading-relaxed shadow-inner"
+                spellCheck={false}
+              />
+            </div>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-300">Deskripsi / Subjudul</label>
-                <textarea
-                  value={settings.event_description}
-                  onChange={(e) => setSettings({ ...settings, event_description: e.target.value })}
-                  rows={4}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-300">Tanggal Kegiatan</label>
-                  <input
-                    type="text"
-                    value={settings.event_date}
-                    onChange={(e) => setSettings({ ...settings, event_date: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-300">Lokasi Acara</label>
-                  <input
-                    type="text"
-                    value={settings.event_location}
-                    onChange={(e) => setSettings({ ...settings, event_location: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-slate-800">
-                <button
-                  onClick={handleSaveSettings}
-                  disabled={savingSettings}
-                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold transition-all shadow-lg shadow-cyan-500/25 disabled:opacity-50"
-                >
-                  {savingSettings ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                  <span>Simpan Konten Website</span>
-                </button>
-              </div>
+            <div className="pt-4 mt-4 border-t border-slate-800 flex justify-end">
+              <button
+                onClick={handleSaveSettings}
+                disabled={savingSettings}
+                className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold transition-all shadow-lg shadow-cyan-500/25 disabled:opacity-50"
+              >
+                {savingSettings ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                <span>Simpan Semua Perubahan</span>
+              </button>
             </div>
           </div>
         )}
